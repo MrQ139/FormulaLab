@@ -1,0 +1,10 @@
+{
+	"id": "formulalab",
+	"name": "FormulaLab",
+	"version": "0.2.0",
+	"minAppVersion": "1.5.0",
+	"description": "Interactive formula visualizer and engineering calculators for Obsidian notes.",
+	"author": "Local",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}

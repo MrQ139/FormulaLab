@@ -1,0 +1,310 @@
+.formulalab-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	padding: 14px;
+	margin: 12px 0;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.formulalab-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 8px;
+}
+
+.formulalab-header h4 {
+	margin: 0;
+	font-size: 1.05em;
+	line-height: 1.3;
+}
+
+.formulalab-mode {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 999px;
+	color: var(--text-muted);
+	font-size: 0.78em;
+	line-height: 1;
+	padding: 4px 8px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.formulalab-formula {
+	font-family: var(--font-monospace);
+	font-size: 0.92em;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 8px 10px;
+	margin-bottom: 12px;
+	overflow-x: auto;
+}
+
+.formulalab-controls {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 10px 14px;
+	margin-bottom: 12px;
+}
+
+.formulalab-slider-row {
+	min-width: 0;
+}
+
+.formulalab-slider-label {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	color: var(--text-muted);
+	font-size: 0.86em;
+	margin-bottom: 4px;
+}
+
+.formulalab-slider-value {
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	font-size: 0.95em;
+	white-space: nowrap;
+}
+
+.formulalab-slider {
+	width: 100%;
+	accent-color: var(--interactive-accent);
+}
+
+.formulalab-result {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 8px 0 10px;
+}
+
+.formulalab-result div {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	font-family: var(--font-monospace);
+	font-size: 0.88em;
+	padding: 6px 8px;
+}
+
+.formulalab-runtime-error {
+	color: var(--text-error);
+	font-size: 0.9em;
+	margin: 6px 0;
+	white-space: pre-wrap;
+}
+
+.formulalab-plot {
+	width: 100%;
+	min-height: 360px;
+}
+
+.formulalab-error-card {
+	border-color: var(--text-error);
+}
+
+.formulalab-error-card strong {
+	color: var(--text-error);
+}
+
+.formulalab-error-card pre {
+	background: var(--background-secondary);
+	border-radius: 6px;
+	margin: 8px 0 0;
+	overflow-x: auto;
+	padding: 8px;
+	white-space: pre-wrap;
+}
+
+.pitot-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	padding: 16px;
+	margin: 12px 0;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.pitot-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	margin-bottom: 14px;
+	padding-bottom: 12px;
+}
+
+.pitot-header h4,
+.pitot-panel h5,
+.pitot-notes h5 {
+	margin: 0;
+}
+
+.pitot-header h4 {
+	font-size: 1.12em;
+	line-height: 1.3;
+}
+
+.pitot-subtitle {
+	color: var(--text-muted);
+	font-size: 0.9em;
+	margin-top: 2px;
+}
+
+.pitot-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 12px;
+}
+
+.pitot-panel {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-primary);
+	padding: 14px;
+	min-width: 0;
+}
+
+.pitot-panel h5,
+.pitot-notes h5 {
+	font-size: 0.98em;
+	margin-bottom: 12px;
+}
+
+.pitot-field {
+	margin-bottom: 12px;
+	min-width: 0;
+}
+
+.pitot-field label {
+	display: block;
+	color: var(--text-muted);
+	font-size: 0.86em;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.pitot-field input,
+.pitot-field select {
+	width: 100%;
+	min-height: 38px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	padding: 7px 9px;
+}
+
+.pitot-field input:focus,
+.pitot-field select:focus {
+	outline: 2px solid color-mix(in srgb, var(--interactive-accent) 24%, transparent);
+	border-color: var(--interactive-accent);
+}
+
+.pitot-button {
+	width: 100%;
+	min-height: 40px;
+	border: none;
+	border-radius: 6px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.pitot-result-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: 8px 0;
+}
+
+.pitot-result-row:last-child {
+	border-bottom: none;
+}
+
+.pitot-result-label {
+	color: var(--text-muted);
+	font-size: 0.86em;
+}
+
+.pitot-result-value,
+.pitot-inline-result {
+	font-family: var(--font-monospace);
+	font-weight: 700;
+	overflow-wrap: anywhere;
+	text-align: right;
+}
+
+.pitot-inline-result {
+	text-align: left;
+	padding-top: 6px;
+}
+
+.pitot-message {
+	border-radius: 6px;
+	font-size: 0.86em;
+	margin-top: 10px;
+	padding: 8px 10px;
+}
+
+.pitot-info {
+	background: var(--background-secondary);
+	color: var(--text-normal);
+}
+
+.pitot-warn {
+	background: rgba(180, 83, 9, 0.12);
+	border: 1px solid rgba(180, 83, 9, 0.35);
+	color: var(--text-normal);
+}
+
+.pitot-error {
+	background: rgba(185, 28, 28, 0.12);
+	border: 1px solid rgba(185, 28, 28, 0.35);
+	color: var(--text-error);
+}
+
+.pitot-formula {
+	background: var(--background-secondary);
+	border-left: 3px solid var(--interactive-accent);
+	border-radius: 6px;
+	color: var(--text-muted);
+	font-family: var(--font-monospace);
+	font-size: 0.84em;
+	margin-top: 10px;
+	padding: 8px 10px;
+	white-space: pre-wrap;
+}
+
+.pitot-optional {
+	margin-top: 12px;
+}
+
+.pitot-notes {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	margin-top: 12px;
+	padding: 14px;
+}
+
+.pitot-notes ul {
+	color: var(--text-muted);
+	font-size: 0.88em;
+	margin: 0;
+	padding-left: 18px;
+}
+
+.pitot-notes li {
+	margin: 4px 0;
+}

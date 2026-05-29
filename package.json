@@ -1,0 +1,31 @@
+{
+	"name": "formulalab",
+	"version": "0.2.0",
+	"description": "Interactive formula visualizer and engineering calculators for Obsidian.",
+	"main": "main.js",
+	"scripts": {
+		"build": "node esbuild.config.mjs production",
+		"dev": "node esbuild.config.mjs"
+	},
+	"keywords": [
+		"obsidian",
+		"plotly",
+		"mathjs",
+		"visualization"
+	],
+	"author": "Local",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^20.11.30",
+		"builtin-modules": "^3.3.0",
+		"esbuild": "^0.20.2",
+		"obsidian": "^1.5.12",
+		"tslib": "^2.6.2",
+		"typescript": "^5.4.3"
+	},
+	"dependencies": {
+		"mathjs": "^12.4.1",
+		"plotly.js-dist-min": "^2.30.0",
+		"yaml": "^2.4.1"
+	}
+}
