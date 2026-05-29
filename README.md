@@ -20,7 +20,7 @@ It is designed for math notes, engineering study notes, and lightweight scientif
 ## Project Structure
 
 ```text
-.obsidian/plugins/formulalab/
+FormulaLab/
   main.ts              Plugin source code
   main.js              Built plugin bundle
   manifest.json        Obsidian plugin manifest
@@ -33,17 +33,41 @@ It is designed for math notes, engineering study notes, and lightweight scientif
 
 ## Installation
 
-From this folder:
+### Install from GitHub
 
-```bash
-cd .obsidian/plugins/formulalab
-npm install
-npm run build
+Clone this repository directly into your Obsidian vault plugin folder:
+
+```powershell
+cd path\to\Vault\.obsidian\plugins
+git clone https://github.com/MrQ139/FormulaLab.git formulalab
 ```
 
 Then reload Obsidian and enable **FormulaLab** from Community plugins.
 
-This repository already includes a built `main.js`. If `npm install` is very slow inside a synced Google Drive folder, copy the plugin folder to a local temporary folder, run `npm install` and `npm run build` there, then copy the generated `main.js` back into `.obsidian/plugins/formulalab/`.
+### Install from release zip
+
+Download `formulalab-x.y.z.zip` from GitHub Releases and extract it to:
+
+```text
+path/to/Vault/.obsidian/plugins/formulalab/
+```
+
+The extracted folder must contain:
+
+```text
+manifest.json
+main.js
+styles.css
+```
+
+### Development build
+
+```powershell
+npm install
+npm run build
+```
+
+If `npm install` is very slow inside a synced Google Drive folder, copy the plugin folder to a local temporary folder, run `npm install` and `npm run build` there, then copy the generated `main.js` back into `.obsidian/plugins/formulalab/`.
 
 ## Usage
 
