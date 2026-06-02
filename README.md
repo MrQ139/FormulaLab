@@ -1,8 +1,18 @@
 # FormulaLab
 
-FormulaLab is a local Obsidian plugin that renders interactive equation visualizations from `formulalab` markdown code blocks.
+FormulaLab is a local Obsidian plugin for rendering interactive engineering equations directly inside Markdown notes.
 
-It is designed for math notes, engineering study notes, and lightweight scientific modeling notes.
+It is designed for aerospace engineering notes, propulsion calculations, experimental logs, and lightweight scientific modeling workflows where equations need to be explored visually rather than stored as static text.
+
+## Project Position
+
+FormulaLab is intended to sit between three tools:
+
+- **Obsidian** for research notes and knowledge management
+- **mathjs** for safe scalar equation evaluation
+- **Plotly.js** for interactive curve visualization
+
+The current version focuses on simple but reliable scalar formulas. It is not a full symbolic algebra system, CFD tool, or numerical simulation framework.
 
 ## Features
 
@@ -29,6 +39,8 @@ FormulaLab/
   tsconfig.json        TypeScript config
   esbuild.config.mjs   Build config
   README.md            Usage notes
+  CHANGELOG.md         Version history
+  docs/                Extended documentation
 ```
 
 ## Installation
@@ -127,38 +139,7 @@ rhoJet: 220
 ```
 ````
 
-## Examples
-
-### Sine Function
-
-````markdown
-```formulalab
-title: Sine Function
-mode: function
-formula: A*sin(k*x + phi)
-x: x
-x_min: -6.28
-x_max: 6.28
-x_init: 0
-
-params:
-  A:
-    value: 1
-    min: -5
-    max: 5
-    step: 0.1
-  k:
-    value: 1
-    min: 0.1
-    max: 10
-    step: 0.1
-  phi:
-    value: 0
-    min: -3.14
-    max: 3.14
-    step: 0.01
-```
-````
+## Engineering Examples
 
 ### Weber Number
 
@@ -249,6 +230,24 @@ params:
 
 Each parameter requires `value`, `min`, `max`, and `step`. It may also include `label`.
 
+## Current Limitations
+
+The first stable direction is deliberately narrow:
+
+- Scalar numeric formulas only
+- One independent variable per block
+- No matrix expressions
+- No symbolic simplification
+- No contour plots or 3D plots
+- No external data overlay yet
+- No built-in regime map generator yet
+
+These limits keep the plugin useful for engineering notes without turning it into a large simulation platform.
+
+## Roadmap
+
+See [`docs/roadmap.md`](docs/roadmap.md).
+
 ## Plotly Bundling Notes
 
 This plugin uses `plotly.js-dist-min`, which is convenient but large. If Obsidian startup or bundle size becomes an issue, replace it with a smaller Plotly partial bundle that includes only scatter plots.
@@ -258,5 +257,3 @@ If you see build errors involving Node built-ins, confirm that `obsidian`, `elec
 ## mathjs Notes
 
 FormulaLab uses mathjs syntax. Common functions such as `sin`, `cos`, `tan`, `exp`, `log`, `sqrt`, and `abs` work. Use `^` for powers.
-
-The first version supports scalar numeric formulas only. Matrix expressions, units, symbolic simplification, contour plots, 3D plots, data overlays, and regime maps are intentionally left for future versions.
