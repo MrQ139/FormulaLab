@@ -11,9 +11,11 @@
 		"obsidian",
 		"plotly",
 		"mathjs",
-		"visualization"
+		"visualization",
+		"engineering",
+		"aerospace"
 	],
-	"author": "Local",
+	"author": "MrQ139",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^20.11.30",
