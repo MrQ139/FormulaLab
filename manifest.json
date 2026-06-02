@@ -4,7 +4,7 @@
 	"version": "0.2.0",
 	"minAppVersion": "1.5.0",
 	"description": "Interactive formula visualizer and engineering calculators for Obsidian notes.",
-	"author": "Local",
-	"authorUrl": "",
+	"author": "MrQ139",
+	"authorUrl": "https://github.com/MrQ139",
 	"isDesktopOnly": false
 }
