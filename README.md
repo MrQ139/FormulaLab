@@ -17,10 +17,12 @@ The current version focuses on simple but reliable scalar formulas. It is not a 
 ## Features
 
 - Formula-driven 2D plots
+- Lightweight interactive fluid mechanics simulators with `flow-scene`
 - Pitot differential pressure velocity calculator for high-pressure N2 crossflow notes
 - One independent variable
 - Multiple slider-controlled parameters
 - Plotly.js interactive graph
+- Canvas-based particle sketches, draggable probe points, and physical readouts
 - Current x marker on the curve
 - Numeric result display
 - YAML-based code block configuration
@@ -124,6 +126,49 @@ unit: MPa
 rho: 220
 ```
 ````
+
+For lightweight interactive fluid mechanics simulators, use `flow-scene`:
+
+````markdown
+```flow-scene
+title: Pipe Poiseuille Flow
+type: pipe-poiseuille
+particles: 36
+show_profile: true
+
+params:
+  umax:
+    value: 2
+    min: 0.2
+    max: 5
+    step: 0.05
+  R:
+    value: 1
+    min: 0.2
+    max: 2
+    step: 0.05
+```
+````
+
+Supported `flow-scene` types:
+
+| Type | Use |
+| --- | --- |
+| `pipe-poiseuille` | Parabolic velocity profile, no-slip wall cue, particle speed variation |
+| `material-derivative` | Local plus convective change along a moving particle |
+| `control-volume-flux` | Storage and surface flux interpretation of Reynolds transport theorem |
+| `streamline-pathline-streakline` | Difference between instantaneous streamlines and particle paths in unsteady flow |
+| `bernoulli-streamtube` | Pressure head and velocity head exchange through a streamtube |
+
+`flow-scene` is interaction-driven: sliders update the physical sketch directly, and the probe point on the canvas can be dragged to inspect the local physical interpretation.
+
+Each scene renders three study layers:
+
+- A governing-equation panel so the physical relation is visible before the canvas
+- Term cards that show the current value and meaning of each major term
+- A draggable probe that binds the canvas position to the term readout
+
+The goal is not to show generic 2D function plots. Use `flow-scene` when the learner needs to connect a formula to a physical region, flux, particle, streamline, or head exchange.
 
 Optional jet momentum inputs can be included:
 

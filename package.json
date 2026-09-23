@@ -1,6 +1,6 @@
 {
 	"name": "formulalab",
-	"version": "0.2.0",
+	"version": "0.3.8",
 	"description": "Interactive formula visualizer and engineering calculators for Obsidian.",
 	"main": "main.js",
 	"scripts": {

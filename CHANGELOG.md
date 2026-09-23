@@ -1,5 +1,66 @@
 # Changelog
 
+## 0.3.8
+
+### Changed
+
+- Reworked Bernoulli head bars as stacked total-head columns so z changes visibly trade against pressure head
+- Clarified in-canvas guidance that velocity head changes with flow rate or area, not elevation alone
+
+## 0.3.7
+
+### Changed
+
+- Made Bernoulli `zRise` visibly tilt the streamtube and update the elevation head bars/readout
+- Added a datum cue and z rise/drop marker so elevation change is no longer hidden at the nozzle throat
+
+## 0.3.6
+
+### Changed
+
+- Updated the Bernoulli streamtube scene to display pressure head, velocity head, elevation head, and total head together
+- Reworked Bernoulli readouts so elevation change `z` is included in the head budget instead of only changing the tube shape
+
+## 0.3.5
+
+### Changed
+
+- Added Eulerian/Lagrangian view modes to the material derivative scene
+- Reworked the material derivative canvas around a fixed-point observation versus following the same particle over a small `dt`
+- Updated the material derivative formula panel and term cards so `∂φ/∂t`, `V · ∇φ`, and `Dφ/Dt` map directly to the selected view
+
+## 0.3.4
+
+### Changed
+
+- Added a scene-level equation panel to `flow-scene` so the governing physical relation is visible before the canvas
+- Added dynamic term cards for local values, physical meanings, and probe-dependent quantities
+- Renamed default slider labels so parameters map directly to equation terms such as `∂φ/∂t`, `∂φ/∂x`, and `Σṁ`
+- Improved Obsidian-theme-native contrast and typography for formulas and term readouts
+
+## 0.3.3
+
+### Changed
+
+- Removed stale `flow-scene` toolbar button styling so old play/pause/reset controls cannot show in notes
+- Reworked the `material-derivative` scene to show local, convective, and material change directly on the canvas
+
+## 0.3.2
+
+### Changed
+
+- Reframed `flow-scene` as a real-time interactive simulator instead of an animation widget
+- Added draggable canvas probe points with local physical readouts
+- Removed default play/pause style behavior from `flow-scene`
+
+## 0.3.0
+
+### Added
+
+- `flow-scene` Markdown code block for lightweight Canvas-based fluid mechanics schematics
+- Built-in scenes for pipe Poiseuille flow, material derivative, control-volume flux, streamline/pathline comparison, and Bernoulli streamtube interpretation
+- Slider-controlled physical parameters and responsive canvas rendering, with optional animation through `animate: true`
+
 ## 0.2.0
 
 ### Added
