@@ -2,6 +2,9 @@ import { MarkdownPostProcessorContext, Plugin } from "obsidian";
 import Plotly from "plotly.js-dist-min";
 import { compile, EvalFunction } from "mathjs";
 import { parse as parseYaml } from "yaml";
+import { parseCfdCellsConfig, renderCfdCells } from "./src/views/cfdCells";
+import { parseNs2DConfig, renderNs2D } from "./src/views/ns2dView";
+import { SliderElements, createSlider, renderError, clamp, formatNumber, getThemeColor, toNumber, optionalString, finiteOrDefault, isRecord, getErrorMessage } from "./src/ui";
 
 type FormulaParam = {
 	label?: string;
@@ -27,11 +30,6 @@ type FormulaLabConfig = {
 type CurveData = {
 	xValues: number[];
 	yValues: number[];
-};
-
-type SliderElements = {
-	input: HTMLInputElement;
-	value: HTMLElement;
 };
 
 type FlowSceneType =
@@ -152,6 +150,20 @@ export default class FormulaLabPlugin extends Plugin {
 				}
 			}
 		);
+		this.registerMarkdownCodeBlockProcessor("cfd-cells", (source: string, el: HTMLElement) => {
+			try {
+				renderCfdCells(el, parseCfdCellsConfig(source));
+			} catch (error) {
+				renderError(el, getErrorMessage(error));
+			}
+		});
+		this.registerMarkdownCodeBlockProcessor("ns2d", (source: string, el: HTMLElement) => {
+			try {
+				renderNs2D(el, parseNs2DConfig(source));
+			} catch (error) {
+				renderError(el, getErrorMessage(error));
+			}
+		});
 	}
 }
 
@@ -2052,61 +2064,8 @@ function convertPressureToPa(value: string | number, unit: string): number {
 	}
 }
 
-function createSlider(
-	container: HTMLElement,
-	options: { id: string; label: string; value: number; min: number; max: number; step: number }
-): SliderElements {
-	const row = container.createDiv({ cls: "formulalab-slider-row" });
-	const label = row.createEl("label", { cls: "formulalab-slider-label", attr: { for: options.id } });
-	label.createSpan({ text: options.label });
-	const value = label.createSpan({ cls: "formulalab-slider-value", text: formatNumber(options.value) });
-
-	const input = row.createEl("input", {
-		cls: "formulalab-slider",
-		type: "range",
-		attr: {
-			id: options.id,
-			min: String(options.min),
-			max: String(options.max),
-			step: String(options.step),
-			value: String(options.value),
-			"aria-label": options.label,
-		},
-	});
-
-	return { input, value };
-}
-
-function renderError(el: HTMLElement, message: string): void {
-	el.empty();
-	const card = el.createDiv({ cls: "formulalab-card formulalab-error-card" });
-	card.createEl("strong", { text: "FormulaLab error" });
-	card.createEl("pre", { text: message });
-}
-
 function getAutoStep(min: number, max: number): number {
 	return Math.abs(max - min) / 1000;
-}
-
-function clamp(value: number, min: number, max: number): number {
-	return Math.min(Math.max(value, min), max);
-}
-
-function formatNumber(value: number): string {
-	if (!Number.isFinite(value)) {
-		return "NaN";
-	}
-
-	if (value === 0) {
-		return "0";
-	}
-
-	const absolute = Math.abs(value);
-	if (absolute >= 10000 || absolute < 0.001) {
-		return value.toExponential(4);
-	}
-
-	return Number(value.toPrecision(6)).toString();
 }
 
 function formatEngineeringNumber(value: number, digits: number): string {
@@ -2124,44 +2083,11 @@ function formatEngineeringNumber(value: number, digits: number): string {
 	});
 }
 
-function getThemeColor(variableName: string): string {
-	return getComputedStyle(document.body).getPropertyValue(variableName).trim() || "rgba(127,127,127,0.25)";
-}
-
-function toNumber(value: unknown): number {
-	if (typeof value === "number") {
-		return value;
-	}
-
-	if (typeof value === "string" && value.trim() !== "") {
-		return Number(value);
-	}
-
-	return Number.NaN;
-}
-
-function optionalString(value: unknown): string | undefined {
-	return typeof value === "string" && value.trim() !== "" ? value : undefined;
-}
-
 function optionalNumber(value: unknown): number | undefined {
 	const number = toNumber(value);
 	return Number.isFinite(number) ? number : undefined;
 }
 
-function finiteOrDefault(value: unknown, defaultValue: number): number {
-	const number = toNumber(value);
-	return Number.isFinite(number) ? number : defaultValue;
-}
-
 function isPressureUnit(value: string): value is PressureUnit {
 	return PRESSURE_UNITS.includes(value as PressureUnit);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function getErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
 }

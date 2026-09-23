@@ -520,3 +520,187 @@
 .pitot-notes li {
 	margin: 4px 0;
 }
+
+/* cfd-cells and ns2d */
+.formulalab-select {
+	width: 100%;
+}
+
+.formulalab-button {
+	font-size: 0.86em;
+	padding: 4px 12px;
+}
+
+.formulalab-toggle {
+	align-items: center;
+	color: var(--text-muted);
+	display: inline-flex;
+	font-size: 0.86em;
+	gap: 6px;
+}
+
+.cfd-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 14px;
+	margin-bottom: 10px;
+}
+
+.cfd-metrics {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	margin-bottom: 10px;
+}
+
+.cfd-metric {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 6px 9px;
+}
+
+.cfd-metric.is-warning {
+	border-color: var(--text-error);
+}
+
+.cfd-metric-label {
+	color: var(--text-muted);
+	font-size: 0.76em;
+}
+
+.cfd-metric-value {
+	font-family: var(--font-monospace);
+	font-size: 0.95em;
+}
+
+.cfd-metric.is-warning .cfd-metric-value {
+	color: var(--text-error);
+}
+
+.cfd-canvas-wrap {
+	margin: 6px 0;
+	width: 100%;
+}
+
+.cfd-canvas {
+	cursor: pointer;
+	display: block;
+	touch-action: manipulation;
+	width: 100%;
+}
+
+.cfd-hint {
+	color: var(--text-muted);
+	font-size: 0.82em;
+	margin: 4px 0 8px;
+}
+
+.cfd-equation {
+	background: var(--background-secondary);
+	border-left: 3px solid var(--interactive-accent);
+	border-radius: 6px;
+	margin: 8px 0 12px;
+	padding: 10px 12px;
+}
+
+.cfd-equation-title {
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.cfd-equation-line {
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+	overflow-x: auto;
+	white-space: nowrap;
+}
+
+.cfd-note {
+	color: var(--text-muted);
+	font-size: 0.84em;
+	margin-top: 6px;
+}
+
+.cfd-note.is-warning {
+	color: var(--text-error);
+}
+
+.ns2d-description {
+	color: var(--text-muted);
+	font-size: 0.88em;
+	margin-bottom: 10px;
+}
+
+.ns2d-phases {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	margin-bottom: 12px;
+}
+
+.ns2d-phase {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 8px 10px;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ns2d-phase.is-active {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--interactive-accent);
+}
+
+.ns2d-phase-title {
+	font-weight: 600;
+	font-size: 0.92em;
+}
+
+.ns2d-phase-formula {
+	font-family: var(--font-monospace);
+	font-size: 0.86em;
+	margin: 4px 0;
+}
+
+.ns2d-phase-text {
+	color: var(--text-muted);
+	font-size: 0.8em;
+}
+
+.ns2d-phase-live {
+	font-family: var(--font-monospace);
+	font-size: 0.8em;
+	margin-top: 6px;
+}
+
+.ns2d-phase-note {
+	margin-bottom: 8px;
+}
+
+.ns2d-legend {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.82em;
+	gap: 8px;
+	margin: 2px 0 10px;
+}
+
+.ns2d-legend-label {
+	color: var(--text-muted);
+}
+
+.ns2d-legend-value {
+	font-family: var(--font-monospace);
+}
+
+.ns2d-legend-bar {
+	border-radius: 4px;
+	flex: 1 1 120px;
+	height: 10px;
+	min-width: 120px;
+}

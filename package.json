@@ -1,17 +1,23 @@
 {
 	"name": "formulalab",
-	"version": "0.3.8",
+	"version": "0.4.0",
 	"description": "Interactive formula visualizer and engineering calculators for Obsidian.",
 	"main": "main.js",
 	"scripts": {
 		"build": "node esbuild.config.mjs production",
-		"dev": "node esbuild.config.mjs"
+		"dev": "node esbuild.config.mjs",
+		"test": "esbuild tests/solvers.test.ts --bundle --platform=node --outfile=dist/solvers.test.cjs --log-level=warning && node dist/solvers.test.cjs",
+		"harness": "esbuild dev/harness.ts --bundle --format=iife --outfile=dev/harness.js --log-level=warning && node dev/serve.mjs",
+		"check-note": "esbuild tests/validate-note.ts --bundle --platform=node --outfile=dist/validate-note.cjs --log-level=warning --alias:plotly.js-dist-min=./tests/plotly-stub.ts && node dist/validate-note.cjs"
 	},
 	"keywords": [
 		"obsidian",
 		"plotly",
 		"mathjs",
 		"visualization",
+		"cfd",
+		"navier-stokes",
+		"finite-volume",
 		"engineering",
 		"aerospace"
 	],

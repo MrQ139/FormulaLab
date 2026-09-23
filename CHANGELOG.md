@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- `cfd-cells` block: finite-volume teaching views
+  - `convection-diffusion`: 1D steady problem with central, upwind, hybrid, and power-law schemes; click a cell to see its discrete equation with numbers, negative-coefficient and cell-Péclet warnings, exact-solution overlay
+  - `advection`: transient pulse advection with upwind, Lax–Wendroff, Lax–Friedrichs, and FTCS; CFL and mass-conservation readouts, divergence stop
+  - `diffusion-2d`: steady 2D conduction with Jacobi, Gauss–Seidel, and SOR; per-cell equation and residual history
+- `ns2d` block: 2D incompressible Navier–Stokes (staggered MAC grid, projection, SOR pressure Poisson)
+  - cases `cavity`, `channel`, `couette`, `obstacle`; hybrid/upwind/central convection
+  - phase-by-phase stepping (predictor → pressure Poisson → correction) with the matching field shown after each phase
+  - speed, vorticity, pressure, divergence, u, v fields; tracer particles and velocity arrows
+  - live validation plots: Ghia et al. (1982) cavity data, analytic Poiseuille/Couette profiles, wake probe with Strouhal estimate
+- Solver validation tests (`npm test`) and a browser harness (`npm run harness`)
+
+### Changed
+
+- Shared UI helpers moved to `src/ui.ts`; animations pause when a block is off screen or its note is closed
+
 ## 0.3.8
 
 ### Changed

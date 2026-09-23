@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FormulaLab harness</title>
+<link rel="stylesheet" href="/styles.css">
+<style>
+	:root {
+		--background-primary: #ffffff; --background-secondary: #f5f6f8; --background-modifier-border: #dcdfe4;
+		--text-normal: #1f2328; --text-muted: #667085; --text-error: #d92d20; --interactive-accent: #6d5bd0;
+		--font-monospace: ui-monospace, Consolas, monospace; --font-interface: system-ui, sans-serif;
+	}
+	body { background: var(--background-primary); color: var(--text-normal); font-family: var(--font-interface); max-width: 900px; margin: 0 auto; padding: 16px; }
+	pre[data-block] { display: none; }
+	button { cursor: pointer; }
+	select { padding: 3px; }
+</style>
+</head>
+<body>
+<h2>cfd-cells · convection-diffusion</h2>
+<pre data-block="cfd-cells">type: convection-diffusion
+scheme: central
+cells: 5
+velocity: 0.1
+diffusivity: 0.1</pre>
+<h2>cfd-cells · advection</h2>
+<pre data-block="cfd-cells">type: advection
+scheme: lax-wendroff
+courant: 0.8
+shape: square</pre>
+<h2>cfd-cells · diffusion-2d</h2>
+<pre data-block="cfd-cells">type: diffusion-2d
+cells: 8
+left: 100
+right: 0
+top: 50
+bottom: insulated
+method: gauss-seidel</pre>
+<h2>ns2d · cavity</h2>
+<pre data-block="ns2d">case: cavity
+re: 100
+grid: 32</pre>
+<h2>ns2d · obstacle</h2>
+<pre data-block="ns2d">case: obstacle
+re: 120</pre>
+<h2>ns2d · channel</h2>
+<pre data-block="ns2d">case: channel
+re: 20</pre>
+<script src="/dev/harness.js"></script>
+</body>
+</html>

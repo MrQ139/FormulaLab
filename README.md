@@ -12,12 +12,14 @@ FormulaLab is intended to sit between three tools:
 - **mathjs** for safe scalar equation evaluation
 - **Plotly.js** for interactive curve visualization
 
-The current version focuses on simple but reliable scalar formulas. It is not a full symbolic algebra system, CFD tool, or numerical simulation framework.
+It also ships two teaching-scale CFD blocks: `cfd-cells`, which explains finite-volume discretization cell by cell, and `ns2d`, a validated 2D incompressible Navier–Stokes solver that runs in the note. They are built for understanding, not for production engineering analysis; FormulaLab is not a symbolic algebra system or a general-purpose CFD code.
 
 ## Features
 
 - Formula-driven 2D plots
 - Lightweight interactive fluid mechanics simulators with `flow-scene`
+- `cfd-cells`: finite-volume cells you can click to see each cell's discrete equation, scheme behaviour (central/upwind/hybrid/power-law), CFL stability, and iterative solver convergence
+- `ns2d`: 2D incompressible Navier–Stokes on a staggered MAC grid with projection, stepped phase by phase (predictor → pressure Poisson → correction), with lid-driven cavity, channel, Couette, and cylinder-wake cases validated against benchmark and analytic solutions
 - Pitot differential pressure velocity calculator for high-pressure N2 crossflow notes
 - One independent variable
 - Multiple slider-controlled parameters
@@ -33,7 +35,12 @@ The current version focuses on simple but reliable scalar formulas. It is not a 
 
 ```text
 FormulaLab/
-  main.ts              Plugin source code
+  main.ts              Plugin entry, formulalab / flow-scene / pitot blocks
+  src/solvers/         Pure numerical solvers (fvm.ts, ns2d.ts), no DOM access
+  src/views/           cfd-cells and ns2d renderers
+  src/ui.ts            Shared controls, colour maps, animation loop
+  tests/               Solver validation tests (npm test)
+  dev/                 Browser harness for visual checks (npm run harness)
   main.js              Built plugin bundle
   manifest.json        Obsidian plugin manifest
   styles.css           Obsidian-themed UI styles
@@ -79,6 +86,8 @@ styles.css
 ```powershell
 npm install
 npm run build
+npm test          # solver validation (cavity benchmark, analytic profiles, FVM textbook cases)
+npm run harness   # visual harness at http://localhost:5178/dev/index.html
 ```
 
 If `npm install` is very slow inside a synced Google Drive folder, copy the plugin folder to a local temporary folder, run `npm install` and `npm run build` there, then copy the generated `main.js` back into `.obsidian/plugins/formulalab/`.
@@ -169,6 +178,65 @@ Each scene renders three study layers:
 - A draggable probe that binds the canvas position to the term readout
 
 The goal is not to show generic 2D function plots. Use `flow-scene` when the learner needs to connect a formula to a physical region, flux, particle, streamline, or head exchange.
+
+### Finite volumes cell by cell: `cfd-cells`
+
+````markdown
+```cfd-cells
+type: convection-diffusion
+scheme: central        # central | upwind | hybrid | power-law
+cells: 5
+velocity: 0.1
+diffusivity: 0.1
+phi_left: 1
+phi_right: 0
+```
+````
+
+| Type | What it teaches | Main fields |
+| --- | --- | --- |
+| `convection-diffusion` | Steady 1D convection–diffusion (Patankar; Versteeg & Malalasekera ch. 5). Click a cell to see `a_P φ_P = a_W φ_W + a_E φ_E + S_u` with numbers; negative coefficients and cell Péclet > 2 are flagged; exact solution overlay | `scheme`, `cells`, `velocity`, `diffusivity`, `phi_left`, `phi_right` |
+| `advection` | Transient linear advection; numerical diffusion vs. dispersion, CFL stability, FTCS instability | `scheme` (`upwind`, `lax-wendroff`, `lax-friedrichs`, `ftcs`), `courant`, `cells`, `shape` (`square`, `gauss`) |
+| `diffusion-2d` | Steady 2D conduction on a grid of cells; Jacobi vs. Gauss–Seidel vs. SOR convergence with residual history; click a cell for its equation | `cells`, `left`/`right`/`top`/`bottom` (number or `insulated`), `source`, `method`, `omega` |
+
+### 2D Navier–Stokes: `ns2d`
+
+````markdown
+```ns2d
+case: cavity           # cavity | channel | couette | obstacle
+re: 100
+grid: 32
+scheme: hybrid         # hybrid | upwind | central
+field: speed           # speed | vorticity | pressure | divergence | u | v
+tracers: true
+arrows: false
+autoplay: false
+```
+````
+
+Each time step is shown as the three projection-method phases. **단계별 ▷** runs one phase at a time and switches the view to what that phase produced: the divergence of the predicted velocity u*, the pressure field, then the divergence-free result. Validation plots update live: centreline u against Ghia et al. (1982) for the cavity at Re = 100/400/1000, the analytic Poiseuille and Couette profiles, and a wake probe with a Strouhal-number estimate for the cylinder.
+
+The solver uses the MAC discretization of Griebel, Dornseifer & Neunhoeffer (donor-cell/central blended convection, SOR pressure Poisson). All quantities are non-dimensional (U = 1, ρ = 1, ν = UL/Re; the cylinder case uses its diameter D = 0.2 as L).
+
+## Validation
+
+`npm test` runs the solver checks in Node:
+
+| Check | Result |
+| --- | --- |
+| Versteeg & Malalasekera Example 5.1, central scheme, 5 cells | all cell values within 5×10⁻⁴ of the textbook |
+| Central scheme at cell Pe > 2 | negative coefficient and unbounded wiggles detected; upwind stays bounded |
+| Lid-driven cavity, Re = 100, 48×48 | max \|u − Ghia\| on the vertical centreline ≈ 0.005 |
+| Poiseuille channel / Couette flow | max error vs. analytic profile 0.0011 / < 10⁻⁴ |
+| Cylinder wake | bounded, mass-conserving; Strouhal ≈ 0.16 at Re = 120 in the browser |
+| Projection | removes > 99.99 % of the predictor divergence each step |
+
+## References
+
+- U. Ghia, K. N. Ghia, C. T. Shin, "High-Re solutions for incompressible flow using the Navier–Stokes equations and a multigrid method," *J. Comput. Phys.* 48 (1982) 387–411 (cavity benchmark data).
+- M. Griebel, T. Dornseifer, T. Neunhoeffer, *Numerical Simulation in Fluid Dynamics: A Practical Introduction*, SIAM, 1998 (MAC grid and projection scheme).
+- S. V. Patankar, *Numerical Heat Transfer and Fluid Flow*, 1980; H. K. Versteeg, W. Malalasekera, *An Introduction to Computational Fluid Dynamics*, 2nd ed., 2007 (finite-volume schemes).
+- L. A. Barba, G. F. Forsyth, "CFD Python: the 12 steps to Navier–Stokes equations," *JOSE* 1(9), 21 (2018) — the step-by-step teaching sequence these blocks follow (no code is copied).
 
 Optional jet momentum inputs can be included:
 
@@ -279,8 +347,9 @@ Each parameter requires `value`, `min`, `max`, and `step`. It may also include `
 
 The first stable direction is deliberately narrow:
 
-- Scalar numeric formulas only
-- One independent variable per block
+- Scalar numeric formulas only in `formulalab` blocks
+- One independent variable per `formulalab` block
+- `ns2d` is 2D, uniform-grid, laminar and first/second-order; the cylinder is a staircase approximation
 - No matrix expressions
 - No symbolic simplification
 - No contour plots or 3D plots
