@@ -88,7 +88,10 @@ npm install
 npm run build
 npm test          # solver validation (cavity benchmark, analytic profiles, FVM textbook cases)
 npm run harness   # visual harness at http://localhost:5178/dev/index.html
+npm run check-note -- note.md   # parse every FormulaLab block in a note
 ```
+
+On Windows, paths with spaces or parentheses are mangled by npm; run `node dist/validate-note.cjs "path to note.md"` after one `npm run check-note` build instead.
 
 If `npm install` is very slow inside a synced Google Drive folder, copy the plugin folder to a local temporary folder, run `npm install` and `npm run build` there, then copy the generated `main.js` back into `.obsidian/plugins/formulalab/`.
 
@@ -333,6 +336,7 @@ params:
 | `title` | No | Card title |
 | `mode` | No | Display badge such as `function` or `engineering` |
 | `formula` | Yes | mathjs-compatible formula |
+| `latex` | No | LaTeX shown above the plot; without it the formula is converted by mathjs `toTex()` and typeset with Obsidian's MathJax |
 | `x` | Yes | Independent variable name |
 | `x_label` | No | Plot and slider label for x |
 | `y_label` | No | Plot and result label for y |
@@ -364,7 +368,7 @@ See [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Plotly Bundling Notes
 
-This plugin uses `plotly.js-dist-min`, which is convenient but large. If Obsidian startup or bundle size becomes an issue, replace it with a smaller Plotly partial bundle that includes only scatter plots.
+This plugin uses `plotly.js-basic-dist-min` (scatter, bar, and pie only, about 1 MB). Plotly and mathjs are loaded with dynamic `import()` the first time a block needs them, so enabling the plugin does not slow Obsidian's startup; in a browser measurement the plugin load went from about 1.4 s (0.4.0, full Plotly evaluated at load) to about 0.06 s.
 
 If you see build errors involving Node built-ins, confirm that `obsidian`, `electron`, and Node built-in modules are listed as external in `esbuild.config.mjs`.
 

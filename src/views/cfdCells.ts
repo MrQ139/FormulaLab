@@ -1,11 +1,10 @@
-import Plotly from "plotly.js-dist-min";
 import { parse as parseYaml } from "yaml";
 import {
 	AdvectionScheme, advectStep, Boundary, Diffusion2D, exactConvectionDiffusion, FvmScheme, IterativeMethod,
 	pulse, PulseShape, solveConvectionDiffusion,
 } from "../solvers/fvm";
 import {
-	animationLoop, bindSlider, createButton, createSelect, finiteOrDefault, fitCanvas, formatNumber, getThemeColor,
+	animationLoop, bindSlider, loadPlotly, createButton, createSelect, finiteOrDefault, fitCanvas, formatNumber, getThemeColor,
 	isRecord, optionalString, rgb, sequentialColor,
 } from "../ui";
 
@@ -187,13 +186,13 @@ function renderConvectionDiffusion(card: HTMLElement, config: CfdCellsConfig, id
 		const xs = [0, ...result.cells.map(cell => cell.x), 1], ys = [config.phiLeft, ...values, config.phiRight];
 		const fine = Array.from({ length: 201 }, (_, i) => i / 200);
 		const fg = getThemeColor("--text-normal"), grid = getThemeColor("--background-modifier-border");
-		void Plotly.react(plot, [
+		void loadPlotly().then(Plotly => Plotly.react(plot, [
 			{ x: fine, y: fine.map(x => exactConvectionDiffusion(setup, x)), type: "scatter", mode: "lines", name: "정확해", line: { width: 2, dash: "dot" } },
 			{ x: xs, y: ys, type: "scatter", mode: "lines+markers", name: `수치해 (${state.scheme})`, marker: { size: 7 } },
 		], {
 			margin: { l: 48, r: 16, t: 12, b: 42 }, height: 280, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
 			font: { color: fg }, xaxis: { title: "x", gridcolor: grid }, yaxis: { title: "φ", gridcolor: grid }, legend: { orientation: "h" },
-		}, { displayModeBar: false, responsive: true });
+		}, { displayModeBar: false, responsive: true }));
 	}
 	update();
 }

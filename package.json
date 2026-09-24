@@ -1,6 +1,6 @@
 {
 	"name": "formulalab",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"description": "Interactive formula visualizer and engineering calculators for Obsidian.",
 	"main": "main.js",
 	"scripts": {
@@ -33,7 +33,7 @@
 	},
 	"dependencies": {
 		"mathjs": "^12.4.1",
-		"plotly.js-dist-min": "^2.30.0",
+		"plotly.js-basic-dist-min": "^2.35.3",
 		"yaml": "^2.4.1"
 	}
 }

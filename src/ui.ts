@@ -28,6 +28,13 @@ export function createSlider(
 	return { input, value };
 }
 
+type PlotlyApi = { react: (el: HTMLElement, data: unknown[], layout: unknown, config?: unknown) => Promise<unknown> };
+let plotlyModule: Promise<PlotlyApi> | null = null;
+/** Plotly (~1 MB) is evaluated on the first chart instead of at plugin load, so Obsidian starts fast. */
+export function loadPlotly(): Promise<PlotlyApi> {
+	return (plotlyModule ??= import("plotly.js-basic-dist-min").then(m => (m.default ?? m) as PlotlyApi));
+}
+
 export function createSelect<T extends string>(
 	container: HTMLElement,
 	label: string,

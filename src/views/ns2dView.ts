@@ -1,8 +1,7 @@
-import Plotly from "plotly.js-dist-min";
 import { parse as parseYaml } from "yaml";
 import { Convection, GHIA_CAVITY_U, Ns2D, NsCase, NsField } from "../solvers/ns2d";
 import {
-	animationLoop, bindSlider, createButton, createSelect, createToggle, divergingColor, finiteOrDefault, fitCanvas,
+	animationLoop, bindSlider, loadPlotly, createButton, createSelect, createToggle, divergingColor, finiteOrDefault, fitCanvas,
 	formatNumber, getThemeColor, isRecord, optionalString, rgb, sequentialColor,
 } from "../ui";
 
@@ -295,7 +294,7 @@ export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 			plotNote.setText(period > 0 && amplitude > 0.02
 				? `후류 탐침 v(t)가 주기적으로 진동: 주기 T ≈ ${formatNumber(period)}, Strouhal 수 St = fD/U ≈ ${formatNumber(0.2 / period)} (실험값: Re≈100~200에서 약 0.16~0.19, 계단형 격자라 오차가 있다).`
 				: "원기둥 뒤 4r 지점의 세로 속도 v(t)를 기록합니다. Re가 충분히 크면 와류 방출로 진동이 시작됩니다(초기 과도 구간 이후).");
-			void Plotly.react(plot, [{ x: tail.map(p => p[0]), y: tail.map(p => p[1]), type: "scatter", mode: "lines", name: "탐침 v(t)" }], layout("시간 t", "v"), { displayModeBar: false, responsive: true });
+			void loadPlotly().then(Plotly => Plotly.react(plot, [{ x: tail.map(p => p[0]), y: tail.map(p => p[1]), type: "scatter", mode: "lines", name: "탐침 v(t)" }], layout("시간 t", "v"), { displayModeBar: false, responsive: true }));
 			return;
 		}
 		const profile = s.verticalProfile(0.5, 81);
@@ -313,7 +312,7 @@ export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 			traces.push({ x: ys.map(y => s.analyticProfile(y) as number), y: ys, type: "scatter", mode: "lines", name: config.flowCase === "channel" ? "해석해 u = 4y(1−y)" : "해석해 u = y", line: { dash: "dot", width: 2 } });
 			plotNote.setText("채널 중앙 단면의 u(y)를 정상상태 해석해와 비교합니다. 처음엔 벽 근처부터 운동량이 확산되어 들어오다 해석해로 수렴합니다.");
 		}
-		void Plotly.react(plot, traces, layout("u", "y"), { displayModeBar: false, responsive: true });
+		void loadPlotly().then(Plotly => Plotly.react(plot, traces, layout("u", "y"), { displayModeBar: false, responsive: true }));
 	}
 
 	reset();

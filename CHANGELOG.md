@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1
+
+### Fixed
+
+- Obsidian reported the plugin as slow to load: Plotly and mathjs were evaluated at plugin load. They are now loaded on first use, and the full Plotly bundle is replaced by `plotly.js-basic-dist-min` (main.js 5.5 MB → 2.0 MB; load ≈ 1.4 s → 0.06 s in a browser measurement)
+- `formulalab` formulas were shown as raw mathjs text; they are now typeset with Obsidian's MathJax (via mathjs `toTex()`), with an optional `latex` field for hand-written notation
+- The plot's y-axis and legend no longer fall back to the full formula text
+
 ## 0.4.0
 
 ### Added

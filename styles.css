@@ -44,6 +44,16 @@
 	overflow-x: auto;
 }
 
+.formulalab-formula-math {
+	font-family: inherit;
+	font-size: 1em;
+	text-align: center;
+}
+
+.formulalab-formula-math mjx-container[display="true"] {
+	margin: 0.2em 0 !important;
+}
+
 .formulalab-controls {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

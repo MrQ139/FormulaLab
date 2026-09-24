@@ -1,10 +1,9 @@
-import { MarkdownPostProcessorContext, Plugin } from "obsidian";
-import Plotly from "plotly.js-dist-min";
-import { compile, EvalFunction } from "mathjs";
+import { finishRenderMath, MarkdownPostProcessorContext, Plugin, renderMath } from "obsidian";
+import type { EvalFunction } from "mathjs";
 import { parse as parseYaml } from "yaml";
 import { parseCfdCellsConfig, renderCfdCells } from "./src/views/cfdCells";
 import { parseNs2DConfig, renderNs2D } from "./src/views/ns2dView";
-import { SliderElements, createSlider, renderError, clamp, formatNumber, getThemeColor, toNumber, optionalString, finiteOrDefault, isRecord, getErrorMessage } from "./src/ui";
+import { loadPlotly, SliderElements, createSlider, renderError, clamp, formatNumber, getThemeColor, toNumber, optionalString, finiteOrDefault, isRecord, getErrorMessage } from "./src/ui";
 
 type FormulaParam = {
 	label?: string;
@@ -18,6 +17,8 @@ type FormulaLabConfig = {
 	title?: string;
 	mode?: string;
 	formula: string;
+	/** Optional LaTeX shown instead of the formula converted by mathjs. */
+	latex?: string;
 	x: string;
 	x_label?: string;
 	y_label?: string;
@@ -107,21 +108,27 @@ type PitotVelocityStatus = {
 const POINT_COUNT = 300;
 const PRESSURE_UNITS: PressureUnit[] = ["Pa", "kPa", "bar", "MPa"];
 
+type MathModule = typeof import("mathjs");
+let mathModule: Promise<MathModule> | null = null;
+// mathjs builds its whole function table on import; defer that to the first formulalab block so Obsidian starts fast.
+const loadMath = (): Promise<MathModule> => (mathModule ??= import("mathjs"));
+
 export default class FormulaLabPlugin extends Plugin {
 	async onload() {
 		this.registerMarkdownCodeBlockProcessor(
 			"formulalab",
-			(source: string, el: HTMLElement, _ctx: MarkdownPostProcessorContext) => {
+			async (source: string, el: HTMLElement, _ctx: MarkdownPostProcessorContext) => {
 				try {
 					const config = parseFormulaLabConfig(source);
-					const errors = validateConfig(config);
+					const math = await loadMath();
+					const errors = validateConfig(config, math);
 
 					if (errors.length > 0) {
 						renderError(el, errors.join("\n"));
 						return;
 					}
 
-					renderFormulaLab(el, config);
+					renderFormulaLab(el, config, math);
 				} catch (error) {
 					renderError(el, getErrorMessage(error));
 				}
@@ -208,6 +215,7 @@ function parseFormulaLabConfig(source: string): FormulaLabConfig {
 		title: optionalString(raw.title),
 		mode: optionalString(raw.mode),
 		formula: String(raw.formula ?? ""),
+		latex: optionalString(raw.latex),
 		x: String(raw.x ?? ""),
 		x_label: optionalString(raw.x_label),
 		y_label: optionalString(raw.y_label),
@@ -218,7 +226,7 @@ function parseFormulaLabConfig(source: string): FormulaLabConfig {
 	};
 }
 
-function validateConfig(config: FormulaLabConfig): string[] {
+function validateConfig(config: FormulaLabConfig, math: MathModule): string[] {
 	const errors: string[] = [];
 
 	if (!config.formula.trim()) {
@@ -284,7 +292,7 @@ function validateConfig(config: FormulaLabConfig): string[] {
 	}
 
 	try {
-		compile(config.formula);
+		math.compile(config.formula);
 	} catch (error) {
 		errors.push(`Formula parsing failed: ${getErrorMessage(error)}`);
 	}
@@ -326,10 +334,22 @@ function generateCurve(
 	return { xValues, yValues };
 }
 
-function renderFormulaLab(el: HTMLElement, config: FormulaLabConfig): void {
+/** Shows the formula as typeset math; falls back to the raw mathjs text if LaTeX conversion fails. */
+function renderFormulaMath(container: HTMLElement, config: FormulaLabConfig, math: MathModule): void {
+	try {
+		const tex = config.latex ?? math.parse(config.formula).toTex({ parenthesis: "auto", implicit: "hide" });
+		container.appendChild(renderMath(tex, true));
+		void finishRenderMath();
+	} catch {
+		container.removeClass("formulalab-formula-math");
+		container.setText(config.formula);
+	}
+}
+
+function renderFormulaLab(el: HTMLElement, config: FormulaLabConfig, math: MathModule): void {
 	el.empty();
 
-	const compiledExpression = compile(config.formula);
+	const compiledExpression = math.compile(config.formula);
 	const state = {
 		currentX: config.x_init,
 		params: Object.fromEntries(Object.entries(config.params).map(([name, param]) => [name, param.value])),
@@ -344,7 +364,7 @@ function renderFormulaLab(el: HTMLElement, config: FormulaLabConfig): void {
 		header.createSpan({ cls: "formulalab-mode", text: config.mode });
 	}
 
-	card.createDiv({ cls: "formulalab-formula", text: config.formula });
+	renderFormulaMath(card.createDiv({ cls: "formulalab-formula formulalab-formula-math" }), config, math);
 
 	const controls = card.createDiv({ cls: "formulalab-controls" });
 	const paramSliders = new Map<string, SliderElements>();
@@ -408,7 +428,7 @@ function renderFormulaLab(el: HTMLElement, config: FormulaLabConfig): void {
 					y: curve.yValues,
 					type: "scatter",
 					mode: "lines",
-					name: config.title ?? config.formula,
+					name: config.title ?? "f(x)",
 					line: { width: 2 },
 				},
 				{
@@ -436,7 +456,7 @@ function renderFormulaLab(el: HTMLElement, config: FormulaLabConfig): void {
 					gridcolor: getThemeColor("--background-modifier-border"),
 				},
 				yaxis: {
-					title: config.y_label ?? config.formula,
+					title: config.y_label ?? "y",
 					zeroline: true,
 					gridcolor: getThemeColor("--background-modifier-border"),
 				},
@@ -444,10 +464,10 @@ function renderFormulaLab(el: HTMLElement, config: FormulaLabConfig): void {
 				legend: { orientation: "h" },
 			};
 
-			Plotly.react(plotEl, data, layout, {
+			void loadPlotly().then(Plotly => Plotly.react(plotEl, data, layout, {
 				displayModeBar: false,
 				responsive: true,
-			});
+			}));
 		} catch (error) {
 			errorEl.setText(`Evaluation failed: ${getErrorMessage(error)}`);
 		}
