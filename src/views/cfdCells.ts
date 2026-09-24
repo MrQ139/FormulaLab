@@ -4,8 +4,8 @@ import {
 	pulse, PulseShape, solveConvectionDiffusion,
 } from "../solvers/fvm";
 import {
-	animationLoop, bindSlider, loadPlotly, createButton, createSelect, finiteOrDefault, fitCanvas, formatNumber, getThemeColor,
-	isRecord, optionalString, rgb, sequentialColor,
+	animationLoop, bindSlider, canvasFont, loadPlotly, createButton, createSelect, finiteOrDefault, fitCanvas, formatNumber,
+	getThemeColor, isRecord, optionalString, renderTex, rgb, sequentialColor, tc, TERM,
 } from "../ui";
 
 type CellsType = "convection-diffusion" | "advection" | "diffusion-2d";
@@ -100,7 +100,8 @@ function renderConvectionDiffusion(card: HTMLElement, config: CfdCellsConfig, id
 		selected: 0,
 	};
 	state.selected = Math.min(2, state.n - 1);
-	card.createDiv({ cls: "formulalab-formula", text: "d(ρuφ)/dx = d/dx(Γ dφ/dx)   →   각 셀:  a_P φ_P = a_W φ_W + a_E φ_E + S_u" });
+	renderTex(card.createDiv({ cls: "formulalab-formula formulalab-formula-math" }),
+		`${tc("blue", "\\dfrac{d}{dx}(\\rho u\\phi)")} = ${tc("green", "\\dfrac{d}{dx}\\left(\\Gamma\\dfrac{d\\phi}{dx}\\right)")} \\quad\\Longrightarrow\\quad a_P\\phi_P = a_W\\phi_W + a_E\\phi_E + S_u`, true);
 	const controls = card.createDiv({ cls: "formulalab-controls" });
 	bindSlider(controls, `${id}-n`, "셀 수 N", { value: state.n, min: 2, max: 40, step: 1 }, v => { state.n = v; state.selected = Math.min(state.selected, v - 1); update(); });
 	bindSlider(controls, `${id}-u`, "속도 u", { value: state.u, min: -3, max: 3, step: 0.05 }, v => { state.u = v; update(); });
@@ -141,7 +142,7 @@ function renderConvectionDiffusion(card: HTMLElement, config: CfdCellsConfig, id
 		const pad = 36, cellWidth = (width - 2 * pad) / state.n, top = 34, boxH = 50;
 		layout = { cellWidth, left: pad };
 		ctx.clearRect(0, 0, width, height);
-		ctx.font = "12px var(--font-interface, sans-serif)";
+		ctx.font = canvasFont(12);
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		const textColor = getThemeColor("--text-normal"), muted = getThemeColor("--text-muted"), accent = getThemeColor("--interactive-accent");
@@ -173,9 +174,9 @@ function renderConvectionDiffusion(card: HTMLElement, config: CfdCellsConfig, id
 		const c = result.cells[sel], exact = exactConvectionDiffusion(setup, c.x), k = sel + 1;
 		equation.empty();
 		equation.createDiv({ cls: "cfd-equation-title", text: `셀 ${k} (x = ${formatNumber(c.x)})의 이산 방정식` });
-		const west = sel === 0 ? `${c.boundaryWest.toFixed(3)}·φ_A` : `${c.aW.toFixed(3)}·φ${k - 1}`;
-		const east = sel === state.n - 1 ? `${c.boundaryEast.toFixed(3)}·φ_B` : `${c.aE.toFixed(3)}·φ${k + 1}`;
-		equation.createDiv({ cls: "cfd-equation-line", text: `${c.aP.toFixed(3)}·φ${k} = ${west} + ${east}` });
+		const west = sel === 0 ? `${c.boundaryWest.toFixed(3)}\\,\\phi_A` : `${c.aW.toFixed(3)}\\,\\phi_{${k - 1}}`;
+		const east = sel === state.n - 1 ? `${c.boundaryEast.toFixed(3)}\\,\\phi_B` : `${c.aE.toFixed(3)}\\,\\phi_{${k + 1}}`;
+		renderTex(equation.createDiv({ cls: "cfd-equation-math" }), `${c.aP.toFixed(3)}\\,\\phi_{${k}} = ${west} + ${east}`, true);
 		equation.createDiv({ cls: "cfd-equation-line", text: `→ φ${k} = ${c.phi.toFixed(4)}   (정확해 ${exact.toFixed(4)}, 오차 ${(c.phi - exact).toExponential(1)})` });
 		const notes: string[] = [];
 		if (sel === 0 || sel === state.n - 1) notes.push("경계 셀: 경계면이 반 셀(Δx/2) 떨어져 있어 확산 전도도가 2Γ/Δx가 되고, 경계값 항은 생성항 S_u로 넘어간다.");
@@ -187,8 +188,8 @@ function renderConvectionDiffusion(card: HTMLElement, config: CfdCellsConfig, id
 		const fine = Array.from({ length: 201 }, (_, i) => i / 200);
 		const fg = getThemeColor("--text-normal"), grid = getThemeColor("--background-modifier-border");
 		void loadPlotly().then(Plotly => Plotly.react(plot, [
-			{ x: fine, y: fine.map(x => exactConvectionDiffusion(setup, x)), type: "scatter", mode: "lines", name: "정확해", line: { width: 2, dash: "dot" } },
-			{ x: xs, y: ys, type: "scatter", mode: "lines+markers", name: `수치해 (${state.scheme})`, marker: { size: 7 } },
+			{ x: fine, y: fine.map(x => exactConvectionDiffusion(setup, x)), type: "scatter", mode: "lines", name: "정확해", line: { width: 2, dash: "dot", color: TERM.gray } },
+			{ x: xs, y: ys, type: "scatter", mode: "lines+markers", name: `수치해 (${state.scheme})`, line: { color: TERM.blue }, marker: { size: 7, color: TERM.blue } },
 		], {
 			margin: { l: 48, r: 16, t: 12, b: 42 }, height: 280, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
 			font: { color: fg }, xaxis: { title: "x", gridcolor: grid }, yaxis: { title: "φ", gridcolor: grid }, legend: { orientation: "h" },
@@ -209,7 +210,8 @@ function renderAdvection(card: HTMLElement, config: CfdCellsConfig, id: string):
 		playing: false,
 		pending: 0,
 	};
-	card.createDiv({ cls: "formulalab-formula", text: "∂φ/∂t + c ∂φ/∂x = 0,   Courant 수 C = cΔt/Δx" });
+	renderTex(card.createDiv({ cls: "formulalab-formula formulalab-formula-math" }),
+		"\\dfrac{\\partial\\phi}{\\partial t} + c\\,\\dfrac{\\partial\\phi}{\\partial x} = 0, \\qquad C = \\dfrac{c\\,\\Delta t}{\\Delta x}", true);
 	const controls = card.createDiv({ cls: "formulalab-controls" });
 	bindSlider(controls, `${id}-n`, "셀 수", { value: state.n, min: 20, max: 200, step: 10 }, v => { state.n = v; reset(); });
 	bindSlider(controls, `${id}-c`, "Courant 수 C", { value: state.courant, min: 0.05, max: 1.5, step: 0.05 }, v => { state.courant = v; reset(); });
@@ -270,7 +272,7 @@ function renderAdvection(card: HTMLElement, config: CfdCellsConfig, id: string):
 		const cellW = (right - left) / state.n, toX = (i: number) => left + (i + 0.5) * cellW;
 		ctx.clearRect(0, 0, width, height);
 		const grid = getThemeColor("--background-modifier-border"), fg = getThemeColor("--text-muted");
-		ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.font = "11px sans-serif"; ctx.fillStyle = fg; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+		ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.font = canvasFont(11); ctx.fillStyle = fg; ctx.textAlign = "right"; ctx.textBaseline = "middle";
 		for (const v of [0, 0.5, 1]) { ctx.beginPath(); ctx.moveTo(left, toY(v)); ctx.lineTo(right, toY(v)); ctx.stroke(); ctx.fillText(String(v), left - 6, toY(v)); }
 		const line = (values: Float64Array, color: string, dash: number[], widthPx: number) => {
 			ctx.strokeStyle = color; ctx.setLineDash(dash); ctx.lineWidth = widthPx; ctx.beginPath();
@@ -285,7 +287,7 @@ function renderAdvection(card: HTMLElement, config: CfdCellsConfig, id: string):
 		});
 		ctx.textAlign = "left"; ctx.fillStyle = fg;
 		ctx.fillText("점선: 정확해 · 실선: 수치해 · 아래 띠: 셀 값", left, stripTop + stripH + 12);
-		if (max > 1e3) { ctx.fillStyle = "#d33"; ctx.font = "bold 14px sans-serif"; ctx.fillText("발산! 해가 폭주해 멈췄습니다.", left + 8, plotTop + 12); }
+		if (max > 1e3) { ctx.fillStyle = "#d33"; ctx.font = canvasFont(14, "bold"); ctx.fillText("발산! 해가 폭주해 멈췄습니다.", left + 8, plotTop + 12); }
 	}
 	reset();
 }
@@ -301,7 +303,8 @@ function renderDiffusion2D(card: HTMLElement, config: CfdCellsConfig, id: string
 		playing: false,
 		pending: 0,
 	};
-	card.createDiv({ cls: "formulalab-formula", text: "∇·(k∇T) + q = 0   →   각 셀:  a_P T_P = a_W T_W + a_E T_E + a_S T_S + a_N T_N + S_u" });
+	renderTex(card.createDiv({ cls: "formulalab-formula formulalab-formula-math" }),
+		"\\nabla\\cdot(k\\nabla T) + q = 0 \\quad\\Longrightarrow\\quad a_P T_P = \\textstyle\\sum_{nb} a_{nb} T_{nb} + S_u", true);
 	const controls = card.createDiv({ cls: "formulalab-controls" });
 	bindSlider(controls, `${id}-n`, "셀 수 (한 변)", { value: state.n, min: 3, max: 24, step: 1 }, v => { state.n = v; reset(); });
 	createSelect(controls, "반복법", METHODS, state.method, v => { state.method = v; reset(); });
@@ -361,7 +364,7 @@ function renderDiffusion2D(card: HTMLElement, config: CfdCellsConfig, id: string
 		const height = canvas.height / (window.devicePixelRatio || 1), margin = 30, size = Math.min(width - 2 * margin, height - 2 * margin), x0 = (width - size) / 2, y0 = margin, cell = size / state.n;
 		geometry = { x0, y0, size };
 		ctx.clearRect(0, 0, width, height);
-		ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = `${Math.max(8, Math.min(12, cell / 2.6))}px sans-serif`;
+		ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = canvasFont(Math.max(8, Math.min(12, cell / 2.6)));
 		for (let i = 0; i < state.n; i++) for (let j = 0; j < state.n; j++) {
 			const T = s.T[i * state.n + j], color = sequentialColor((T - lo) / (hi - lo)), x = x0 + i * cell, y = y0 + (state.n - 1 - j) * cell;
 			ctx.fillStyle = rgb(color); ctx.fillRect(x, y, cell, cell);
@@ -370,7 +373,7 @@ function renderDiffusion2D(card: HTMLElement, config: CfdCellsConfig, id: string
 		}
 		const [si, sj] = state.selected, sx = x0 + si * cell, sy = y0 + (state.n - 1 - sj) * cell;
 		ctx.strokeStyle = getThemeColor("--interactive-accent"); ctx.lineWidth = 3; ctx.strokeRect(sx + 1.5, sy + 1.5, cell - 3, cell - 3);
-		ctx.fillStyle = getThemeColor("--text-muted"); ctx.font = "11px sans-serif";
+		ctx.fillStyle = getThemeColor("--text-muted"); ctx.font = canvasFont(11);
 		const label = (b: Boundary) => (b === "insulated" ? "단열" : `${b}`);
 		ctx.fillText(`위: ${label(config.top)}`, width / 2, y0 - 14);
 		ctx.fillText(`아래: ${label(config.bottom)}`, width / 2, y0 + size + 14);
@@ -378,11 +381,11 @@ function renderDiffusion2D(card: HTMLElement, config: CfdCellsConfig, id: string
 		ctx.save(); ctx.translate(x0 + size + 14, y0 + size / 2); ctx.rotate(Math.PI / 2); ctx.fillText(`오른쪽: ${label(config.right)}`, 0, 0); ctx.restore();
 
 		const eq = s.equation(si, sj), f = (v: number) => v.toFixed(2);
-		const term = (a: number, name: string, value: number | null) => (value === null || a === 0 ? null : `${f(a)}·${name}(${f(value)})`);
-		const terms = [term(eq.aW, "T_W", eq.neighbours.W), term(eq.aE, "T_E", eq.neighbours.E), term(eq.aS, "T_S", eq.neighbours.S), term(eq.aN, "T_N", eq.neighbours.N)].filter(Boolean);
+		const term = (a: number, name: string, value: number | null) => (value === null || a === 0 ? null : `${f(a)}\\,\\underbrace{T_{${name}}}_{${f(value)}}`);
+		const terms = [term(eq.aW, "W", eq.neighbours.W), term(eq.aE, "E", eq.neighbours.E), term(eq.aS, "S", eq.neighbours.S), term(eq.aN, "N", eq.neighbours.N)].filter(Boolean);
 		equation.empty();
 		equation.createDiv({ cls: "cfd-equation-title", text: `셀 (${si + 1}, ${sj + 1})의 이산 방정식` });
-		equation.createDiv({ cls: "cfd-equation-line", text: `${f(eq.aP)}·T_P = ${terms.join(" + ") || "0"} + S_u(${f(eq.su)})` });
+		renderTex(equation.createDiv({ cls: "cfd-equation-math" }), `${f(eq.aP)}\\,T_P = ${terms.join(" + ") || "0"} + \\underbrace{S_u}_{${f(eq.su)}}`, true);
 		const target = ((eq.aW * (eq.neighbours.W ?? 0)) + (eq.aE * (eq.neighbours.E ?? 0)) + (eq.aS * (eq.neighbours.S ?? 0)) + (eq.aN * (eq.neighbours.N ?? 0)) + eq.su) / eq.aP;
 		equation.createDiv({ cls: "cfd-equation-line", text: `현재 T_P = ${f(eq.T)}  ·  이웃 값으로 다시 계산하면 ${f(target)}  (차이 ${(target - eq.T).toExponential(1)})` });
 		const boundaryNote = eq.aP - (eq.aW + eq.aE + eq.aS + eq.aN) > 1e-9;
@@ -391,7 +394,7 @@ function renderDiffusion2D(card: HTMLElement, config: CfdCellsConfig, id: string
 
 		const history = s.residuals, { ctx: rc, width: rw } = fitCanvas(residualCanvas, 120), rh = 120;
 		rc.clearRect(0, 0, rw, rh);
-		rc.fillStyle = getThemeColor("--text-muted"); rc.font = "11px sans-serif"; rc.textAlign = "left"; rc.textBaseline = "top";
+		rc.fillStyle = getThemeColor("--text-muted"); rc.font = canvasFont(11); rc.textAlign = "left"; rc.textBaseline = "top";
 		rc.fillText("잔차 (log₁₀) — 반복할수록 내려가면 수렴", 8, 4);
 		if (history.length > 1) {
 			const logs = history.map(r => Math.log10(Math.max(r, 1e-12))), top = Math.max(...logs), bottom = Math.min(...logs, top - 1);

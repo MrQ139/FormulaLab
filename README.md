@@ -16,17 +16,15 @@ It also ships two teaching-scale CFD blocks: `cfd-cells`, which explains finite-
 
 ## Features
 
-- Formula-driven 2D plots
-- Lightweight interactive fluid mechanics simulators with `flow-scene`
+- Formula-driven 2D plots: the formula is typeset, the current value is shown in large type and read off the curve, and `marks` draw reference lines such as a critical pressure ratio
+- `flow-scene`: five animated textbook flows whose particles follow the actual velocity field, with the equation's terms coloured like the drawing
 - `cfd-cells`: finite-volume cells you can click to see each cell's discrete equation, scheme behaviour (central/upwind/hybrid/power-law), CFL stability, and iterative solver convergence
 - `ns2d`: 2D incompressible Navier–Stokes on a staggered MAC grid with projection, stepped phase by phase (predictor → pressure Poisson → correction), with lid-driven cavity, channel, Couette, and cylinder-wake cases validated against benchmark and analytic solutions
 - Pitot differential pressure velocity calculator for high-pressure N2 crossflow notes
 - One independent variable
 - Multiple slider-controlled parameters
 - Plotly.js interactive graph
-- Canvas-based particle sketches, draggable probe points, and physical readouts
-- Current x marker on the curve
-- Numeric result display
+- Numbers shown with three significant digits (`5.00×10⁵` instead of `5.0000e+5`)
 - YAML-based code block configuration
 - Local bundling with no CDN dependency
 - Safe expression evaluation with mathjs, no `eval()`
@@ -35,11 +33,11 @@ It also ships two teaching-scale CFD blocks: `cfd-cells`, which explains finite-
 
 ```text
 FormulaLab/
-  main.ts              Plugin entry, formulalab / flow-scene / pitot blocks
+  main.ts              Plugin entry (registers the blocks, plugs in Obsidian's MathJax) and the Pitot calculator
   src/solvers/         Pure numerical solvers (fvm.ts, ns2d.ts), no DOM access
-  src/views/           cfd-cells and ns2d renderers
-  src/ui.ts            Shared controls, colour maps, animation loop
-  tests/               Solver validation tests (npm test)
+  src/views/           formulaLab, flowScene, cfdCells and ns2dView renderers
+  src/ui.ts            Shared controls, number format, term colours, TeX rendering, animation loop
+  tests/               Solver validation and parser tests (npm test)
   dev/                 Browser harness for visual checks (npm run harness)
   main.js              Built plugin bundle
   manifest.json        Obsidian plugin manifest
@@ -164,21 +162,17 @@ params:
 
 Supported `flow-scene` types:
 
-| Type | Use |
-| --- | --- |
-| `pipe-poiseuille` | Parabolic velocity profile, no-slip wall cue, particle speed variation |
-| `material-derivative` | Local plus convective change along a moving particle |
-| `control-volume-flux` | Storage and surface flux interpretation of Reynolds transport theorem |
-| `streamline-pathline-streakline` | Difference between instantaneous streamlines and particle paths in unsteady flow |
-| `bernoulli-streamtube` | Pressure head and velocity head exchange through a streamtube |
+| Type | What you see | Parameters |
+| --- | --- | --- |
+| `pipe-poiseuille` | Dye lines released at the same moment bend into the parabolic profile; particles move at `u(r)`; tap to read the speed at a radius | `umax`, `R` |
+| `material-derivative` | A fixed sensor and a moving particle in a field that changes in space and time, with the last 8 s each recorded, so `∂φ/∂t` and `Dφ/Dt` separate | `U`, `gradient`, `oscillation` |
+| `control-volume-flux` | A tank inside a control volume: inflow and outflow particle streams, and a water level that rises at `ṁ_in − ṁ_out` | `inflow`, `outflow` |
+| `streamline-pathline-streakline` | The "flapping hose" `u = U, v = V₀ sin ω(t − x/U)`: a particle flies straight (pathline), the dye from the nozzle waves with growing amplitude (streakline), the instantaneous streamlines are a third curve | `U`, `unsteady` |
+| `bernoulli-streamtube` | A Venturi tube drawn at its real elevation with the energy line, hydraulic grade line and stacked head columns (z, p/ρg, V²/2g); warns when the pressure head goes negative | `flow`, `constriction`, `zRise` |
 
-`flow-scene` is interaction-driven: sliders update the physical sketch directly, and the probe point on the canvas can be dragged to inspect the local physical interpretation.
+Scenes play on their own (`autoplay: false` to start paused) and pause when scrolled off screen. Each scene shows its equation with every term in the colour of the thing that shows it in the drawing, one short explanation, a colour legend with live values, and the canvas; where it helps, tapping the canvas moves a probe, sensor or nozzle.
 
-Each scene renders three study layers:
-
-- A governing-equation panel so the physical relation is visible before the canvas
-- Term cards that show the current value and meaning of each major term
-- A draggable probe that binds the canvas position to the term readout
+Older blocks keep working. Parameters the redrawn scenes no longer use (`storage` for the control volume, which is now `inflow − outflow`; `shear`; `viscosity`) are ignored.
 
 The goal is not to show generic 2D function plots. Use `flow-scene` when the learner needs to connect a formula to a physical region, flux, particle, streamline, or head exchange.
 
@@ -344,6 +338,7 @@ params:
 | `x_max` | Yes | Maximum x value |
 | `x_init` | Yes | Initial x value |
 | `params` | Yes | Parameter slider definitions |
+| `marks` | No | Reference lines: a list of `{ x: …, label: … }` or `{ y: …, label: … }`, where the value is a number or a formula in the parameters, e.g. `x: '(2/(k+1))^(k/(k-1))'` |
 
 Each parameter requires `value`, `min`, `max`, and `step`. It may also include `label`.
 

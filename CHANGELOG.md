@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.5.0
+
+### Changed
+
+- `flow-scene` rewritten. Particles now move with each scene's velocity field and leave short fading tails; before, they were random dots that never moved. Labels are in Korean, equations are typeset with the same colours as the drawing, and the term cards and raw probe readout are replaced by a colour legend with live values
+  - `pipe-poiseuille`: dye lines released together bend into the parabola
+  - `material-derivative`: fixed sensor vs. moving particle, with their φ records side by side
+  - `control-volume-flux`: the stored mass is `inflow − outflow` and shows as a tank level (the old independent `storage` slider could contradict mass conservation)
+  - `streamline-pathline-streakline`: the "flapping hose" field, where the three lines clearly differ (the old scene never drew a streakline)
+  - `bernoulli-streamtube`: energy line, hydraulic grade line and head columns at true elevation, with a negative-pressure warning
+- `formulalab`: the current value is shown in large type and annotated on the curve with guide lines to both axes; the legend is gone; the x slider comes first; `Re = …` style left-hand side when `y_label` is a simple symbol
+- `ns2d`: the main view is the flow, play and Re; the step-by-step phases, grid, scheme, toggles and numbers are under "자세히", the validation plot under "검증". Particles have fading tails, and the field starts about one time unit in instead of empty
+- `cfd-cells` and `ns2d` equations, including each cell's discrete equation with its coefficients, are typeset
+- Numbers use three significant digits and `×10ⁿ` (e.g. `5.00×10⁵`)
+- Canvas text now uses the note's font (a CSS variable in the canvas font string was silently ignored)
+
+### Added
+
+- `formulalab` `marks`: reference lines at a number or at a formula of the parameters
+- Parser tests for `flow-scene` backward compatibility, `marks` and number formatting; `check-note` now validates `formulalab` and `flow-scene` blocks with the real parsers
+- The dev harness renders all block types, typesets with MathJax, and accepts `?only=<n>` and `?dark=1`
+
 ## 0.4.1
 
 ### Fixed

@@ -1,7 +1,9 @@
 // Parses every FormulaLab block in a Markdown note with the plugin's own parsers: `node validate-note.cjs <note.md>`.
 import { readFileSync } from "node:fs";
-import { parse as parseYaml } from "yaml";
+import * as math from "mathjs";
 import { parseCfdCellsConfig } from "../src/views/cfdCells";
+import { parseFlowSceneConfig } from "../src/views/flowScene";
+import { parseFormulaLabConfig, validateConfig } from "../src/views/formulaLab";
 import { parseNs2DConfig } from "../src/views/ns2dView";
 
 const note = readFileSync(process.argv[2], "utf8");
@@ -12,9 +14,10 @@ for (const match of note.matchAll(/^(`{3,})(formulalab|cfd-cells|ns2d|flow-scene
 	try {
 		if (kind === "cfd-cells") parseCfdCellsConfig(body);
 		else if (kind === "ns2d") parseNs2DConfig(body);
+		else if (kind === "flow-scene") parseFlowSceneConfig(body);
 		else {
-			const raw = parseYaml(body);
-			if (kind === "formulalab" && (!raw.formula || !raw.x || !raw.params)) throw new Error("formula, x, params are required");
+			const errors = validateConfig(parseFormulaLabConfig(body), math);
+			if (errors.length) throw new Error(errors.join("; "));
 		}
 		console.log(`ok   ${kind}`);
 	} catch (error) {

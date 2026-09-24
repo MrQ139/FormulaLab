@@ -1,8 +1,8 @@
 import { parse as parseYaml } from "yaml";
 import { Convection, GHIA_CAVITY_U, Ns2D, NsCase, NsField } from "../solvers/ns2d";
 import {
-	animationLoop, bindSlider, loadPlotly, createButton, createSelect, createToggle, divergingColor, finiteOrDefault, fitCanvas,
-	formatNumber, getThemeColor, isRecord, optionalString, rgb, sequentialColor,
+	animationLoop, bindSlider, loadPlotly, createButton, createDetails, createSelect, createToggle, divergingColor, finiteOrDefault,
+	fitCanvas, formatNumber, getThemeColor, isRecord, optionalString, renderTex, rgb, sequentialColor, tc,
 } from "../ui";
 
 export interface Ns2DConfig {
@@ -64,7 +64,9 @@ export function parseNs2DConfig(source: string): Ns2DConfig {
 	};
 }
 
-interface Tracer { x: number; y: number; px: number; py: number; age: number }
+interface Tracer { x: number; y: number; trail: Array<[number, number]>; age: number; life: number }
+
+const TRAIL = 10;
 
 export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 	el.empty();
@@ -80,42 +82,50 @@ export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 	const header = card.createDiv({ cls: "formulalab-header" });
 	header.createEl("h4", { text: config.title ?? spec.title });
 	header.createSpan({ cls: "formulalab-mode", text: "2D Navier–Stokes" });
-	card.createDiv({ cls: "formulalab-formula", text: "∂u/∂t + (u·∇)u = −∇p + (1/Re)∇²u,    ∇·u = 0" });
+	renderTex(card.createDiv({ cls: "formulalab-formula formulalab-formula-math" }),
+		`${tc("blue", "\\dfrac{\\partial \\mathbf{u}}{\\partial t} + (\\mathbf{u}\\cdot\\nabla)\\mathbf{u}")} = ${tc("orange", "-\\nabla p")} + ${tc("green", "\\dfrac{1}{Re}\\nabla^{2}\\mathbf{u}")}, \\qquad \\nabla\\cdot\\mathbf{u} = 0`, true);
 	card.createDiv({ cls: "ns2d-description", text: spec.description });
 
-	const phases = card.createDiv({ cls: "ns2d-phases" });
-	const phaseCards = ([
-		["① 예측 (운동량)", "u* = uⁿ + Δt [ ν∇²u − (u·∇)u ]", "압력을 빼고 대류·확산만으로 속도를 한 스텝 전진시킨다. 이 u*는 질량보존을 만족하지 않는다."],
-		["② 압력 푸아송", "∇²p = (∇·u*) / Δt", "u*의 발산을 정확히 지우는 압력을 푼다(SOR 반복). 압력은 '비압축 조건을 지키게 하는 힘'이다."],
-		["③ 보정 (투영)", "uⁿ⁺¹ = u* − Δt ∇p", "압력 기울기로 속도를 밀어 발산 없는 장으로 투영한다. 이렇게 한 스텝이 끝난다."],
-	] as Array<[string, string, string]>).map(([title, formula, text]) => {
-		const box = phases.createDiv({ cls: "ns2d-phase" });
-		box.createDiv({ cls: "ns2d-phase-title", text: title });
-		box.createDiv({ cls: "ns2d-phase-formula", text: formula });
-		box.createDiv({ cls: "ns2d-phase-text", text });
-		return { box, live: box.createDiv({ cls: "ns2d-phase-live" }) };
-	});
-
+	// Everyday controls stay on top; the step-by-step view, grid, scheme and numbers sit in "자세히".
 	const controls = card.createDiv({ cls: "formulalab-controls" });
-	bindSlider(controls, `${id}-re`, config.flowCase === "obstacle" ? "Reynolds 수 Re = UD/ν" : "Reynolds 수 Re", { value: state.re, min: spec.re[0], max: spec.re[1], step: 1 }, v => { state.re = v; reset(); }, v => String(Math.round(v)));
-	bindSlider(controls, `${id}-grid`, config.flowCase === "cavity" ? "격자 (N×N)" : "격자 (세로 셀 수)", { value: state.grid, min: spec.grid[0], max: spec.grid[1], step: spec.grid[2] }, v => { state.grid = v; reset(); }, v => String(Math.round(v)));
-	createSelect(controls, "대류항 스킴", SCHEMES, state.convection, v => { state.convection = v; reset(); });
-	createSelect(controls, "표시할 장", FIELDS, state.field, v => { state.field = v; draw(); });
-	const toggles = card.createDiv({ cls: "cfd-buttons" });
-	createToggle(toggles, "입자(유적) 표시", state.tracers, v => { state.tracers = v; draw(); });
-	createToggle(toggles, "속도 화살표", state.arrows, v => { state.arrows = v; draw(); });
+	bindSlider(controls, `${id}-re`, config.flowCase === "obstacle" ? "레이놀즈 수 Re = UD/ν" : "레이놀즈 수 Re", { value: state.re, min: spec.re[0], max: spec.re[1], step: 1 }, v => { state.re = v; reset(); }, v => String(Math.round(v)));
+	createSelect(controls, "색으로 볼 값", FIELDS, state.field, v => { state.field = v; draw(); });
 	const buttons = card.createDiv({ cls: "cfd-buttons" });
 	const play = createButton(buttons, "▶ 재생", () => { state.playing = !state.playing; state.phaseMode = false; loop.wake(); draw(); });
-	createButton(buttons, "한 스텝", () => { state.playing = false; state.phaseMode = false; finishPhase(); advance(1); draw(); });
-	createButton(buttons, "단계별 ▷", () => { state.playing = false; state.phaseMode = true; state.solver.advancePhase(); draw(); }, "예측 → 압력 → 보정을 한 단계씩 실행");
-	createButton(buttons, "초기화", () => reset());
-	const phaseNote = card.createDiv({ cls: "cfd-note ns2d-phase-note" });
-	const metrics = card.createDiv({ cls: "cfd-metrics" });
+	createButton(buttons, "처음부터", () => reset());
 	const canvasWrap = card.createDiv({ cls: "cfd-canvas-wrap" });
 	const canvas = canvasWrap.createEl("canvas", { cls: "cfd-canvas", attr: { "aria-label": "2D Navier-Stokes field" } });
 	const legend = card.createDiv({ cls: "ns2d-legend" });
-	const plotNote = card.createDiv({ cls: "cfd-hint" });
-	const plot = card.createDiv({ cls: "formulalab-plot" });
+
+	const details = createDetails(card, "자세히 — 한 스텝 뜯어보기 · 격자 · 스킴 · 수치 지표");
+	const phases = details.createDiv({ cls: "ns2d-phases" });
+	const phaseCards = ([
+		["① 예측 (운동량)", "\\mathbf{u}^{*} = \\mathbf{u}^{n} + \\Delta t\\,\\big[\\,\\nu\\nabla^{2}\\mathbf{u} - (\\mathbf{u}\\cdot\\nabla)\\mathbf{u}\\,\\big]", "압력을 빼고 대류·확산만으로 속도를 한 스텝 전진시킨다. 이 u*는 질량보존을 만족하지 않는다."],
+		["② 압력 푸아송", "\\nabla^{2} p = \\dfrac{\\nabla\\cdot\\mathbf{u}^{*}}{\\Delta t}", "u*의 발산을 정확히 지우는 압력을 푼다(SOR 반복). 압력은 '비압축 조건을 지키게 하는 힘'이다."],
+		["③ 보정 (투영)", "\\mathbf{u}^{n+1} = \\mathbf{u}^{*} - \\Delta t\\,\\nabla p", "압력 기울기로 속도를 밀어 발산 없는 장으로 투영한다. 이렇게 한 스텝이 끝난다."],
+	] as Array<[string, string, string]>).map(([title, formula, text]) => {
+		const box = phases.createDiv({ cls: "ns2d-phase" });
+		box.createDiv({ cls: "ns2d-phase-title", text: title });
+		renderTex(box.createDiv({ cls: "ns2d-phase-formula" }), formula, true);
+		box.createDiv({ cls: "ns2d-phase-text", text });
+		return { box, live: box.createDiv({ cls: "ns2d-phase-live" }) };
+	});
+	const stepButtons = details.createDiv({ cls: "cfd-buttons" });
+	createButton(stepButtons, "단계별 ▷", () => { state.playing = false; state.phaseMode = true; state.solver.advancePhase(); draw(); }, "예측 → 압력 → 보정을 한 단계씩 실행");
+	createButton(stepButtons, "한 스텝", () => { state.playing = false; state.phaseMode = false; finishPhase(); advance(1); draw(); });
+	const phaseNote = details.createDiv({ cls: "cfd-note ns2d-phase-note" });
+	const advanced = details.createDiv({ cls: "formulalab-controls" });
+	bindSlider(advanced, `${id}-grid`, config.flowCase === "cavity" ? "격자 (N×N)" : "격자 (세로 셀 수)", { value: state.grid, min: spec.grid[0], max: spec.grid[1], step: spec.grid[2] }, v => { state.grid = v; reset(); }, v => String(Math.round(v)));
+	createSelect(advanced, "대류항 스킴", SCHEMES, state.convection, v => { state.convection = v; reset(); });
+	const toggles = details.createDiv({ cls: "cfd-buttons" });
+	createToggle(toggles, "입자 흐름 표시", state.tracers, v => { state.tracers = v; draw(); });
+	createToggle(toggles, "속도 화살표", state.arrows, v => { state.arrows = v; draw(); });
+	const metrics = details.createDiv({ cls: "cfd-metrics" });
+
+	const validation = createDetails(card, config.flowCase === "obstacle" ? "검증 — 후류 진동과 Strouhal 수" : "검증 — 기준 해와 비교");
+	const plotNote = validation.createDiv({ cls: "cfd-hint" });
+	const plot = validation.createDiv({ cls: "formulalab-plot" });
+	validation.parentElement?.addEventListener("toggle", () => drawPlot());
 	new ResizeObserver(() => { if (card.isConnected) draw(); }).observe(canvasWrap);
 	const heat = document.createElement("canvas");
 
@@ -132,9 +142,13 @@ export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 	function reset(): void {
 		state.solver = new Ns2D({ flowCase: config.flowCase, n: state.grid, re: state.re, convection: state.convection });
 		state.probe = [];
-		state.particles = Array.from({ length: config.flowCase === "obstacle" ? 420 : 260 }, () => spawn(true));
+		state.particles = Array.from({ length: config.flowCase === "obstacle" ? 320 : 200 }, () => spawn(true));
 		state.phaseMode = false;
 		state.lastPlot = 0;
+		// Start from a flow that has already begun to develop (about one time unit, at most ~150 ms of work),
+		// so the first picture is not an empty field.
+		const start = performance.now();
+		while (state.solver.stats.time < 1 && performance.now() - start < 150) advance(1);
 		draw(true);
 	}
 	function finishPhase(): void {
@@ -159,9 +173,9 @@ export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 		for (let tries = 0; tries < 20; tries++) {
 			const x = config.flowCase === "obstacle" && !anywhere ? Math.random() * 0.05 : Math.random() * s.lx, y = Math.random() * s.ly;
 			const i = Math.min(Math.floor(x / s.dx), s.nx - 1), j = Math.min(Math.floor(y / s.dy), s.ny - 1);
-			if (!s.isSolidCell(i, j)) return { x, y, px: x, py: y, age: Math.random() * 400 };
+			if (!s.isSolidCell(i, j)) return { x, y, trail: [], age: 0, life: 160 + Math.random() * 240 };
 		}
-		return { x: 0.01, y: 0.5, px: 0.01, py: 0.5, age: 0 };
+		return { x: 0.01, y: 0.5, trail: [], age: 0, life: 200 };
 	}
 	function moveTracers(dt: number): void {
 		if (!state.tracers || dt <= 0) return;
@@ -172,10 +186,11 @@ export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 			let x = p.x + u2 * dt, y = p.y + v2 * dt;
 			if (s.periodic) x = ((x % s.lx) + s.lx) % s.lx;
 			const i = Math.floor(x / s.dx), j = Math.floor(y / s.dy);
-			const dead = x < 0 || x > s.lx || y < 0 || y > s.ly || p.age > 500 || (i >= 0 && j >= 0 && i < s.nx && j < s.ny && s.isSolidCell(i, j));
+			const dead = x < 0 || x > s.lx || y < 0 || y > s.ly || p.age > p.life || (i >= 0 && j >= 0 && i < s.nx && j < s.ny && s.isSolidCell(i, j));
 			if (dead) return spawn(config.flowCase !== "obstacle");
-			const wrapped = Math.abs(x - p.x) > s.lx / 2;
-			return { x, y, px: wrapped ? x : p.x, py: wrapped ? y : p.y, age: p.age + 1 };
+			// A periodic wrap would draw a tail across the whole channel, so the tail restarts there.
+			const trail = Math.abs(x - p.x) > s.lx / 2 ? [] : [...p.trail, [p.x, p.y] as [number, number]].slice(-TRAIL);
+			return { x, y, trail, age: p.age + 1, life: p.life };
 		});
 	}
 
@@ -255,11 +270,28 @@ export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 			}
 		}
 		if (state.tracers) {
-			ctx.strokeStyle = "rgba(255,255,255,0.75)"; ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 1.4;
-			for (const p of state.particles) {
-				ctx.beginPath(); ctx.moveTo(toX(p.px), toY(p.py)); ctx.lineTo(toX(p.x), toY(p.y)); ctx.stroke();
-				ctx.fillRect(toX(p.x) - 1, toY(p.y) - 1, 2, 2);
+			// Short fading tails show where each particle came from; particles also fade in and out at the start
+			// and end of their life so nothing pops. Tail segments of the same age share one stroke call.
+			ctx.lineCap = "round"; ctx.lineWidth = 1.5;
+			for (let k = 0; k < TRAIL; k++) {
+				ctx.beginPath();
+				for (const p of state.particles) {
+					const n = p.trail.length, a = n - TRAIL + k;
+					if (a < 0) continue;
+					const [x1, y1] = p.trail[a], [x2, y2] = a + 1 < n ? p.trail[a + 1] : [p.x, p.y];
+					ctx.moveTo(toX(x1), toY(y1)); ctx.lineTo(toX(x2), toY(y2));
+				}
+				ctx.strokeStyle = `rgba(255,255,255,${(0.08 + 0.6 * (k + 1) / TRAIL).toFixed(2)})`;
+				ctx.stroke();
 			}
+			ctx.fillStyle = "rgba(255,255,255,0.95)";
+			for (const p of state.particles) {
+				const fade = Math.min(1, p.age / 12, (p.life - p.age) / 12);
+				if (fade <= 0) continue;
+				ctx.globalAlpha = fade;
+				ctx.beginPath(); ctx.arc(toX(p.x), toY(p.y), 1.6, 0, Math.PI * 2); ctx.fill();
+			}
+			ctx.globalAlpha = 1;
 		}
 		ctx.fillStyle = getThemeColor("--text-normal"); ctx.font = "12px sans-serif"; ctx.textBaseline = "bottom"; ctx.textAlign = "left";
 		if (config.flowCase === "cavity" || config.flowCase === "couette") ctx.fillText("움직이는 벽  U = 1  →", ox + 6, oy - 2 > 12 ? oy - 2 : oy + 14);
@@ -273,12 +305,14 @@ export function renderNs2D(el: HTMLElement, config: Ns2DConfig): void {
 		const stops = Array.from({ length: 9 }, (_, k) => rgb(symmetric ? divergingColor(k / 4 - 1) : sequentialColor(k / 8)));
 		bar.style.background = `linear-gradient(90deg, ${stops.join(", ")})`;
 		legend.createSpan({ cls: "ns2d-legend-value", text: formatNumber(hi) });
+		legend.createSpan({ cls: "ns2d-legend-status", text: `t = ${formatNumber(st.time)} · ${st.steps} 스텝` });
 
 		const now = performance.now();
 		if (forcePlot || !state.playing || now - state.lastPlot > 500) { state.lastPlot = now; drawPlot(); }
 	}
 
 	function drawPlot(): void {
+		if (!(validation.parentElement as HTMLDetailsElement | null)?.open) return;
 		const s = state.solver, fg = getThemeColor("--text-normal"), grid = getThemeColor("--background-modifier-border");
 		const layout = (xTitle: string, yTitle: string) => ({
 			margin: { l: 52, r: 16, t: 10, b: 44 }, height: 290, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",

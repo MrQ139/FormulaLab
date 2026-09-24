@@ -11,13 +11,77 @@
 		--text-normal: #1f2328; --text-muted: #667085; --text-error: #d92d20; --interactive-accent: #6d5bd0;
 		--font-monospace: ui-monospace, Consolas, monospace; --font-interface: system-ui, sans-serif;
 	}
+	body.theme-dark {
+		--background-primary: #1e1e1e; --background-secondary: #262626; --background-modifier-border: #3a3a3a;
+		--text-normal: #dadada; --text-muted: #9a9a9a; --text-error: #fb464c; --interactive-accent: #8a5cf5;
+	}
 	body { background: var(--background-primary); color: var(--text-normal); font-family: var(--font-interface); max-width: 900px; margin: 0 auto; padding: 16px; }
 	pre[data-block] { display: none; }
 	button { cursor: pointer; }
 	select { padding: 3px; }
 </style>
+<script>window.MathJax = { startup: { typeset: false }, svg: { fontCache: "local" } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg-full.js"></script>
 </head>
 <body>
+<h2>formulalab · Reynolds</h2>
+<pre data-block="formulalab">title: 레이놀즈 수
+formula: rho*U*D/mu
+x: U
+x_label: 속도 U [m/s]
+y_label: Re [-]
+x_min: 0.01
+x_max: 20
+x_init: 1
+marks:
+  - y: 2300
+    label: 층류 한계 Re ≈ 2300
+params:
+  rho: { label: "밀도 [kg/m³]", value: 1000, min: 1, max: 1200, step: 1 }
+  D: { label: "지름 [m]", value: 0.05, min: 0.001, max: 0.5, step: 0.001 }
+  mu: { label: "점성계수 [Pa·s]", value: 0.001, min: 0.0001, max: 0.01, step: 0.0001 }</pre>
+<h2>formulalab · choked nozzle</h2>
+<pre data-block="formulalab">title: 수렴 노즐의 초크 곡선
+mode: 압축성 유동
+formula: 'sqrt(max(r, (2/(k+1))^(k/(k-1)))^(2/k) - max(r, (2/(k+1))^(k/(k-1)))^((k+1)/k)) / sqrt(((2/(k+1))^(k/(k-1)))^(2/k) - ((2/(k+1))^(k/(k-1)))^((k+1)/k))'
+latex: '\frac{\dot m}{\dot m_{\mathrm{choked}}} = \sqrt{\frac{r_e^{2/k}-r_e^{(k+1)/k}}{r^{*\,2/k}-r^{*\,(k+1)/k}}},\quad r_e=\max(r,\,r^*)'
+x: r
+x_label: 배압비 Pb/P0
+y_label: 유량비 (초크 유량 대비)
+x_min: 0
+x_max: 1
+x_init: 0.8
+marks:
+  - x: '(2/(k+1))^(k/(k-1))'
+    label: 임계 압력비 r*
+params:
+  k: { label: "비열비 k", value: 1.4, min: 1.1, max: 1.67, step: 0.01 }</pre>
+<h2>flow-scene · poiseuille</h2>
+<pre data-block="flow-scene">type: pipe-poiseuille</pre>
+<h2>flow-scene · material derivative</h2>
+<pre data-block="flow-scene">type: material-derivative</pre>
+<h2>flow-scene · control volume (old note with storage)</h2>
+<pre data-block="flow-scene">title: Mass Conservation Through a Fixed Control Volume
+type: control-volume-flux
+particles: 32
+params:
+  inflow: { value: 1.1, min: 0, max: 3, step: 0.05 }
+  outflow: { value: 0.8, min: 0, max: 3, step: 0.05 }
+  storage: { value: 0.25, min: -1, max: 1, step: 0.05 }</pre>
+<h2>flow-scene · streamline / pathline / streakline (old note with shear)</h2>
+<pre data-block="flow-scene">type: streamline-pathline-streakline
+particles: 40
+params:
+  U: { value: 1, min: 0.1, max: 3, step: 0.05 }
+  unsteady: { value: 0.9, min: 0, max: 2, step: 0.05 }
+  shear: { value: 0.35, min: -1.5, max: 1.5, step: 0.05 }</pre>
+<h2>flow-scene · bernoulli</h2>
+<pre data-block="flow-scene">type: bernoulli-streamtube
+show_profile: true
+params:
+  flow: { value: 1, min: 0.2, max: 2.5, step: 0.05 }
+  constriction: { value: 0.48, min: 0.15, max: 0.85, step: 0.01 }
+  zRise: { value: 0.25, min: -0.6, max: 0.6, step: 0.05 }</pre>
 <h2>cfd-cells · convection-diffusion</h2>
 <pre data-block="cfd-cells">type: convection-diffusion
 scheme: central

@@ -136,6 +136,76 @@ export function animationLoop(card: HTMLElement, frame: (elapsedMs: number) => v
 	return { wake };
 }
 
+/**
+ * Term colours shared by equations and drawings: a term in the formula and the thing that shows it in the picture
+ * use the same colour. Mid-tone values stay readable on light and dark themes.
+ */
+export const TERM = {
+	blue: "#2f8fd8",
+	orange: "#e08a2c",
+	purple: "#8b5cf6",
+	green: "#2fa56b",
+	red: "#d64550",
+	gray: "#8a8f98",
+} as const;
+
+/** LaTeX colour wrapper, e.g. tc("blue", "u") → \textcolor{#2f8fd8}{u}. */
+export function tc(color: keyof typeof TERM, tex: string): string {
+	return `\\textcolor{${TERM[color]}}{${tex}}`;
+}
+
+type MathRenderer = (tex: string, display: boolean) => HTMLElement;
+let mathRenderer: MathRenderer | null = null;
+let mathFinisher: (() => unknown) | null = null;
+
+/** main.ts plugs in Obsidian's MathJax and the dev harness its own, so views never import "obsidian" directly. */
+export function setMathRenderer(render: MathRenderer, finish?: () => unknown): void {
+	mathRenderer = render;
+	mathFinisher = finish ?? null;
+}
+
+let finishQueued = false;
+/** Appends typeset LaTeX to `container`; without a renderer (Node tests) it shows the source text. */
+export function renderTex(container: HTMLElement, tex: string, display = true): HTMLElement {
+	if (!mathRenderer) {
+		return container.createSpan({ cls: "formulalab-tex-fallback", text: tex });
+	}
+	try {
+		const element = mathRenderer(tex, display);
+		container.appendChild(element);
+		if (!finishQueued) {
+			finishQueued = true;
+			queueMicrotask(() => { finishQueued = false; void mathFinisher?.(); });
+		}
+		return element;
+	} catch {
+		return container.createSpan({ cls: "formulalab-tex-fallback", text: tex });
+	}
+}
+
+/** Collapsed "자세히" section for secondary controls and numbers. */
+export function createDetails(container: HTMLElement, summary: string, open = false): HTMLElement {
+	const details = container.createEl("details", { cls: "formulalab-details" });
+	details.open = open;
+	details.createEl("summary", { text: summary });
+	return details.createDiv({ cls: "formulalab-details-body" });
+}
+
+/** Row of colour dots with a label and a live value; returns one value setter per item. */
+export function createLegend(container: HTMLElement, items: Array<{ color: string; label: string }>): Array<(value: string) => void> {
+	const row = container.createDiv({ cls: "formulalab-legend" });
+	return items.map(item => {
+		const chip = row.createDiv({ cls: "formulalab-legend-item" });
+		chip.createSpan({ cls: "formulalab-legend-dot" }).style.background = item.color;
+		chip.createSpan({ cls: "formulalab-legend-label", text: item.label });
+		const value = chip.createSpan({ cls: "formulalab-legend-value" });
+		let last = "";
+		return (text: string) => {
+			if (text !== last) { last = text; value.setText(text); }
+		};
+	});
+}
+
 export function renderError(el: HTMLElement, message: string): void {
 	el.empty();
 	const card = el.createDiv({ cls: "formulalab-card formulalab-error-card" });
@@ -147,9 +217,15 @@ export function clamp(value: number, min: number, max: number): number {
 	return Math.min(Math.max(value, min), max);
 }
 
-export function formatNumber(value: number): string {
+const SUPERSCRIPT: Record<string, string> = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+
+/**
+ * Three significant digits; very large or small values as "5.00×10⁵" instead of "5.0000e+5".
+ * Slider labels, legends and readouts all go through this so numbers read the same everywhere.
+ */
+export function formatNumber(value: number, digits = 3): string {
 	if (!Number.isFinite(value)) {
-		return "NaN";
+		return "—";
 	}
 
 	if (value === 0) {
@@ -157,11 +233,18 @@ export function formatNumber(value: number): string {
 	}
 
 	const absolute = Math.abs(value);
-	if (absolute >= 10000 || absolute < 0.001) {
-		return value.toExponential(4);
+	if (absolute >= 1e5 || absolute < 1e-3) {
+		const [mantissa, exponent] = value.toExponential(digits - 1).split("e");
+		const power = String(Number(exponent)).split("").map(c => SUPERSCRIPT[c] ?? c).join("");
+		return `${mantissa}×10${power}`;
 	}
 
-	return Number(value.toPrecision(6)).toString();
+	return Number(value.toPrecision(digits)).toLocaleString("en-US", { maximumFractionDigits: 10 });
+}
+
+/** Canvas fonts cannot resolve CSS variables, so build one from the page's resolved font family. */
+export function canvasFont(size: number, weight = ""): string {
+	return `${weight} ${size}px ${getComputedStyle(document.body).fontFamily || "sans-serif"}`.trim();
 }
 
 export function getThemeColor(variableName: string): string {
