@@ -4,3 +4,4 @@ dist/
 npm-debug.log*
 .eslintcache
 dev/harness.js
+main.js

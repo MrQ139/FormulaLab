@@ -3,7 +3,7 @@
 	"name": "FormulaLab",
 	"version": "0.5.0",
 	"minAppVersion": "1.5.0",
-	"description": "Interactive formula visualizer and engineering calculators for Obsidian notes.",
+	"description": "Plot formulas with live sliders and explore animated fluid mechanics and CFD lessons inside your notes.",
 	"author": "MrQ139",
 	"authorUrl": "https://github.com/MrQ139",
 	"isDesktopOnly": false

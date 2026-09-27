@@ -52,32 +52,33 @@ FormulaLab/
 
 ## Installation
 
-### Install from GitHub
+### Install with BRAT (until it is in the community directory)
 
-Clone this repository directly into your Obsidian vault plugin folder:
+1. Install **BRAT** from Community plugins.
+2. Run **BRAT: Add a beta plugin for testing** and enter `MrQ139/FormulaLab`.
+3. Enable **FormulaLab** in Community plugins. BRAT keeps it updated from new releases.
 
-```powershell
-cd path\to\Vault\.obsidian\plugins
-git clone https://github.com/MrQ139/FormulaLab.git formulalab
-```
+### Install manually
 
-Then reload Obsidian and enable **FormulaLab** from Community plugins.
-
-### Install from release zip
-
-Download `formulalab-x.y.z.zip` from GitHub Releases and extract it to:
+Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/MrQ139/FormulaLab/releases/latest) into:
 
 ```text
 path/to/Vault/.obsidian/plugins/formulalab/
 ```
 
-The extracted folder must contain:
+Then reload Obsidian and enable **FormulaLab** in Community plugins. `main.js` is built for each release and is not committed to the repository.
 
-```text
-manifest.json
-main.js
-styles.css
+### Releasing
+
+1. Update `version` in `manifest.json` and `package.json`, add the version to `versions.json` (value: `minAppVersion`), and add a `## x.y.z` section to `CHANGELOG.md`.
+2. Commit, then push a tag equal to the version, without `v`:
+
+```powershell
+git tag 0.5.1
+git push origin 0.5.1
 ```
+
+The release workflow builds, runs the tests, checks the tag against `manifest.json`, and publishes the release with `main.js`, `manifest.json` and `styles.css` attached.
 
 ### Development build
 
